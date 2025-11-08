@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+
+  <object class="GtkBox" id="page_customization">
+    <property name="orientation">vertical</property>
+    <property name="spacing">20</property>
+    <property name="margin-top">24</property>
+    <property name="margin-bottom">24</property>
+    <property name="margin-start">24</property>
+    <property name="margin-end">24</property>
+    <property name="hexpand">true</property>
+    <property name="vexpand">true</property>
+
+    <!-- Page Header -->
+    <child>
+      <object class="GtkBox">
+        <property name="orientation">vertical</property>
+        <property name="spacing">8</property>
+
+        <child>
+          <object class="GtkLabel">
+            <property name="label">Customization</property>
+            <property name="css-classes">title-1</property>
+            <property name="halign">start</property>
+          </object>
+        </child>
+
+        <child>
+          <object class="GtkLabel">
+            <property name="label">Customize your system appearance and behavior</property>
+            <property name="css-classes">dim</property>
+            <property name="halign">start</property>
+          </object>
+        </child>
+      </object>
+    </child>
+
+    <!-- Main Content Area -->
+    <child>
+      <object class="GtkBox">
+        <property name="orientation">vertical</property>
+        <property name="spacing">12</property>
+        <property name="margin-top">12</property>
+        <property name="margin-bottom">12</property>
+        <property name="hexpand">true</property>
+        <property name="vexpand">true</property>
+        <property name="halign">fill</property>
+        <property name="valign">fill</property>
+
+        <!-- Placeholder content -->
+        <child>
+          <object class="GtkLabel">
+            <property name="label">Customization tools will be implemented here.</property>
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+            <property name="css-classes">dim</property>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

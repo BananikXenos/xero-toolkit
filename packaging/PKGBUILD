@@ -1,0 +1,65 @@
+# Maintainer: Kristián Kekeš <gamerix2006@gmail.com>
+# Maintainer: Steve C. <steve@techxero.com>
+
+pkgname=xero-toolkit
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="GTK4 GUI to manage XeroLinux specific tools and settings"
+arch=('x86_64')
+url="https://github.com/BananikXenos/xero-toolkit"
+license=('GPL-3.0-or-later')
+depends=(
+    'gtk4'
+    'glib2'
+)
+makedepends=(
+    'rust'
+    'cargo'
+    'pkgconf'
+)
+provides=('xero-toolkit')
+conflicts=('xero-toolkit')
+options=('!emptydirs')
+
+build() {
+  cd "${startdir}/.."
+
+  cargo build --release --locked
+}
+
+package() {
+  cd "${startdir}/.."
+
+  # Install binaries into /opt/xero-toolkit
+  install -d "${pkgdir}/opt/xero-toolkit"
+  install -Dm755 "target/release/xero-toolkit" \
+    "${pkgdir}/opt/xero-toolkit/xero-toolkit"
+
+  # Convenience symlink in /usr/bin
+  install -d "${pkgdir}/usr/bin"
+  ln -s "/opt/xero-toolkit/xero-toolkit" "${pkgdir}/usr/bin/xero-toolkit"
+
+  # Install desktop file
+  install -Dm644 "packaging/xero-toolkit.desktop" \
+    "${pkgdir}/usr/share/applications/xero-toolkit.desktop"
+
+  # Install icon
+  install -Dm644 "resources/icons/scalable/apps/xero-toolkit.png" \
+    "${pkgdir}/usr/share/icons/hicolor/scalable/apps/xero-toolkit.png"
+
+  # Install license
+  install -Dm644 "LICENSE" \
+    "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
+
+post_install() {
+  gtk-update-icon-cache -q -t -f usr/share/icons/hicolor
+}
+
+post_upgrade() {
+  post_install
+}
+
+post_remove() {
+  gtk-update-icon-cache -q -t -f usr/share/icons/hicolor
+}

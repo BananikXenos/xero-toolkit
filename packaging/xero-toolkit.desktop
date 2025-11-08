@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=XeroLinux Toolkit
+GenericName=Toolkit
+Comment=GTK4 GUI to manage XeroLinux specific tools and settings
+Exec=xero-toolkit
+Icon=xero-toolkit
+Terminal=false
+StartupNotify=true
+Categories=System;Security;Settings;
+Keywords=xero;toolkit;settings;configuration;tools;
+StartupWMClass=xyz.xerolinux.xero-toolkit

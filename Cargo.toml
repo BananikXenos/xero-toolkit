@@ -1,0 +1,13 @@
+[package]
+name = "xero-toolkit"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+gtk4 = { version = "0.10", features = ["v4_6"] }
+log = "0.4"
+simple_logger = "5.0"
+
+[build-dependencies]
+glib-build-tools = "0.21"
