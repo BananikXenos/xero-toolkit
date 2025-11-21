@@ -68,13 +68,19 @@ fn show_gpu_driver_selection(button: &gtk4::Button, terminal: &Terminal, termina
         .add_option(selection_dialog::SelectionOption::new(
             "nvidia_closed",
             "NVIDIA Closed Source",
-            "Proprietary NVIDIA drivers with CUDA support",
+            "Proprietary NVIDIA drivers",
             false,
         ))
         .add_option(selection_dialog::SelectionOption::new(
             "nvidia_open",
             "NVIDIA Open Source",
             "Open source NVIDIA drivers (Turing+ GPUs)",
+            false,
+        ))
+        .add_option(selection_dialog::SelectionOption::new(
+            "cuda",
+            "CUDA Toolkit",
+            "NVIDIA CUDA Toolkit for GPU-accelerated computing",
             false,
         ))
         .confirm_label("Install");
@@ -149,8 +155,24 @@ fn show_gpu_driver_selection(button: &gtk4::Button, terminal: &Terminal, termina
                 ));
             }
 
-            // Run NVIDIA post-install configuration script (for either driver)
-            if !commands.is_empty() {
+            if selected_ids.contains(&"cuda".to_string()) {
+                commands.push(terminal::TerminalCommand::new(
+                    helper,
+                    &[
+                        "-S",
+                        "--needed",
+                        "--noconfirm",
+                        "cuda",
+                        "cudnn",
+                    ],
+                ));
+            }
+
+            // Run NVIDIA post-install configuration script only if a driver was selected
+            let driver_selected = selected_ids.contains(&"nvidia_closed".to_string())
+                || selected_ids.contains(&"nvidia_open".to_string());
+
+            if driver_selected {
                 commands.push(terminal::TerminalCommand::new(
                     "sudo",
                     &["bash", "/opt/xero-toolkit/scripts/nv-setup.sh"],
