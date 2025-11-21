@@ -47,17 +47,7 @@ fn setup_update_system_button(page_builder: &Builder, main_builder: &Builder) {
                 return;
             }
 
-            let helper = match utils::detect_aur_helper() {
-                Some(h) => h,
-                None => {
-                    warn!("No AUR helper detected");
-                    terminal_clone
-                        .feed(b"\r\nERROR: No AUR helper detected (paru or yay required).\r\n");
-                    return;
-                }
-            };
-
-            let commands = vec![terminal::TerminalCommand::new(helper, &["-Syu"])];
+            let commands = vec![terminal::TerminalCommand::new("/usr/local/bin/upd", &[])];
 
             terminal::run_terminal_commands(
                 &button_clone,
