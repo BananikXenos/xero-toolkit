@@ -1,10 +1,11 @@
 //! Application setup and initialization functionality.
 
+use crate::config;
 use crate::core::{AppContext, UiComponents};
 use crate::ui::{pages, tabs};
 use gtk4::glib;
 use gtk4::prelude::*;
-use gtk4::{gio, Application, ApplicationWindow, Box as GtkBox, Builder, CssProvider, Paned};
+use gtk4::{gio, Application, ApplicationWindow, Box as GtkBox, Builder, CssProvider};
 use log::{info, warn};
 
 /// Initialize and set up main application UI.
@@ -34,10 +35,10 @@ pub fn setup_application_ui(app: &Application) {
     let ctx = setup_ui_components(&builder);
 
     // Setup UI components by category
-    tabs::setup_tabs(&ctx.ui.tabs_container, &ctx.ui.stack);
+    tabs::setup_tabs(ctx.ui.tabs_container(), ctx.ui.stack());
 
     info!("Setting initial view to main page");
-    ctx.ui.stack.set_visible_child_name("main_page");
+    ctx.navigate_to_page("main_page");
     info!("Xero Toolkit application startup complete");
 }
 
@@ -93,52 +94,16 @@ pub fn extract_widget<T: IsA<glib::Object>>(builder: &Builder, name: &str) -> T 
 fn setup_ui_components(builder: &Builder) -> AppContext {
     let stack = extract_widget(builder, "stack");
     let tabs_container = extract_widget(builder, "tabs_container");
-    let main_paned: Paned = extract_widget(builder, "main_paned");
-
-    main_paned.set_wide_handle(true);
-
-    const MIN_SIDEBAR_WIDTH: i32 = 200;
-    const MAX_SIDEBAR_WIDTH: i32 = 400;
-
-    main_paned.connect_notify_local(Some("position"), move |paned, _| {
-        let position = paned.position();
-
-        if position < MIN_SIDEBAR_WIDTH {
-            paned.set_position(MIN_SIDEBAR_WIDTH);
-            log::debug!(
-                "Sidebar resize limited to minimum width: {}",
-                MIN_SIDEBAR_WIDTH
-            );
-            return;
-        }
-
-        if position > MAX_SIDEBAR_WIDTH {
-            paned.set_position(MAX_SIDEBAR_WIDTH);
-            log::debug!(
-                "Sidebar resize limited to maximum width: {}",
-                MAX_SIDEBAR_WIDTH
-            );
-            return;
-        }
-
-        log::debug!("Sidebar resized to width: {}", position);
-    });
-
-    if main_paned.position() < MIN_SIDEBAR_WIDTH {
-        main_paned.set_position(MIN_SIDEBAR_WIDTH);
-    } else if main_paned.position() > MAX_SIDEBAR_WIDTH {
-        main_paned.set_position(MAX_SIDEBAR_WIDTH);
-    }
+    let main_paned = extract_widget(builder, "main_paned");
 
     info!("All UI components successfully initialized from UI builder");
 
-    let ui = UiComponents {
-        stack,
-        tabs_container,
-        main_paned,
-    };
+    let ui = UiComponents::new(stack, tabs_container, main_paned);
 
-    AppContext { ui }
+    // Configure sidebar with size constraints from config
+    ui.configure_sidebar(config::sidebar::MIN_WIDTH, config::sidebar::MAX_WIDTH);
+
+    AppContext::new(ui)
 }
 
 /// Load page content from separate UI files into page containers

@@ -13,6 +13,69 @@ pub struct AppContext {
 pub struct UiComponents {
     pub stack: Stack,
     pub tabs_container: GtkBox,
-    #[allow(dead_code)]
     pub main_paned: Paned,
+}
+
+impl AppContext {
+    /// Create a new application context with UI components.
+    pub fn new(ui: UiComponents) -> Self {
+        Self { ui }
+    }
+
+    /// Navigate to a specific page in the stack.
+    pub fn navigate_to_page(&self, page_name: &str) {
+        self.ui.stack.set_visible_child_name(page_name);
+    }
+}
+
+impl UiComponents {
+    /// Create UI components from individual widgets.
+    pub fn new(stack: Stack, tabs_container: GtkBox, main_paned: Paned) -> Self {
+        Self {
+            stack,
+            tabs_container,
+            main_paned,
+        }
+    }
+
+    /// Configure the sidebar paned widget with size constraints.
+    pub fn configure_sidebar(&self, min_width: i32, max_width: i32) {
+        use gtk4::prelude::*;
+        use log::debug;
+
+        self.main_paned.set_wide_handle(true);
+
+        self.main_paned
+            .connect_notify_local(Some("position"), move |paned, _| {
+                let position = paned.position();
+
+                if position < min_width {
+                    paned.set_position(min_width);
+                    debug!("Sidebar resize limited to minimum width: {}", min_width);
+                } else if position > max_width {
+                    paned.set_position(max_width);
+                    debug!("Sidebar resize limited to maximum width: {}", max_width);
+                } else {
+                    debug!("Sidebar resized to width: {}", position);
+                }
+            });
+
+        // Set initial position within bounds
+        let position = self.main_paned.position();
+        if position < min_width {
+            self.main_paned.set_position(min_width);
+        } else if position > max_width {
+            self.main_paned.set_position(max_width);
+        }
+    }
+
+    /// Get the tabs container for tab management.
+    pub fn tabs_container(&self) -> &GtkBox {
+        &self.tabs_container
+    }
+
+    /// Get the stack widget for page navigation.
+    pub fn stack(&self) -> &Stack {
+        &self.stack
+    }
 }

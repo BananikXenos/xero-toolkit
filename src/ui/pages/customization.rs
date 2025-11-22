@@ -10,15 +10,15 @@
 use crate::ui::command_execution as progress_dialog;
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder};
-use log::{info};
+use log::info;
 
 /// Set up all button handlers for the customization page
 pub fn setup_handlers(page_builder: &Builder, _main_builder: &Builder) {
-    setup_zsh_aio(&page_builder);
-    setup_save_desktop(&page_builder);
-    setup_grub_theme(&page_builder);
-    setup_wallpapers(&page_builder);
-    setup_layan_patch(&page_builder);
+    setup_zsh_aio(page_builder);
+    setup_save_desktop(page_builder);
+    setup_grub_theme(page_builder);
+    setup_wallpapers(page_builder);
+    setup_layan_patch(page_builder);
 }
 
 fn setup_zsh_aio(page_builder: &Builder) {

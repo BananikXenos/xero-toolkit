@@ -7,15 +7,16 @@
 
 use crate::ui::command_execution as progress_dialog;
 use crate::ui::selection_dialog;
+use crate::ui::dialogs::show_error;
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder};
 use log::{info, warn};
 
 /// Set up all button handlers for the drivers page
 pub fn setup_handlers(page_builder: &Builder, _main_builder: &Builder) {
-    setup_gpu_drivers(&page_builder);
-    setup_tailscale(&page_builder);
-    setup_asus_rog(&page_builder);
+    setup_gpu_drivers(page_builder);
+    setup_tailscale(page_builder);
+    setup_asus_rog(page_builder);
 }
 
 fn setup_gpu_drivers(page_builder: &Builder) {
@@ -222,18 +223,4 @@ fn setup_asus_rog(page_builder: &Builder) {
             }
         });
     }
-}
-
-fn show_error(window: &ApplicationWindow, message: &str) {
-    let dialog = gtk4::MessageDialog::builder()
-        .transient_for(window)
-        .modal(true)
-        .message_type(gtk4::MessageType::Error)
-        .buttons(gtk4::ButtonsType::Ok)
-        .text("Error")
-        .secondary_text(message)
-        .build();
-
-    dialog.connect_response(|dialog, _| dialog.close());
-    dialog.present();
 }

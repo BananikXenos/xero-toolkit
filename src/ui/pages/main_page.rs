@@ -5,12 +5,14 @@
 //! - Package manager GUI installation
 //! - External links (Discord, YouTube, Website, Donate)
 
+use crate::config;
 use crate::core;
 use crate::ui::command_execution as progress_dialog;
 use crate::ui::selection_dialog;
+use crate::utils;
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder, Button};
-use log::{info};
+use log::info;
 
 /// Set up all button handlers for the main page
 pub fn setup_handlers(page_builder: &Builder, _main_builder: &Builder) {
@@ -63,36 +65,28 @@ fn setup_external_links(page_builder: &Builder) {
     if let Some(link_discord) = page_builder.object::<Button>("link_discord") {
         link_discord.connect_clicked(move |_| {
             info!("Main page: Discord link clicked");
-            let _ = std::process::Command::new("xdg-open")
-                .arg("https://discord.xerolinux.xyz/")
-                .spawn();
+            let _ = utils::open_url(config::links::DISCORD);
         });
     }
 
     if let Some(link_youtube) = page_builder.object::<Button>("link_youtube") {
         link_youtube.connect_clicked(move |_| {
             info!("Main page: YouTube link clicked");
-            let _ = std::process::Command::new("xdg-open")
-                .arg("https://www.youtube.com/@XeroLinux")
-                .spawn();
+            let _ = utils::open_url(config::links::YOUTUBE);
         });
     }
 
     if let Some(link_website) = page_builder.object::<Button>("link_website") {
         link_website.connect_clicked(move |_| {
             info!("Main page: XeroLinux website link clicked");
-            let _ = std::process::Command::new("xdg-open")
-                .arg("https://xerolinux.xyz/")
-                .spawn();
+            let _ = utils::open_url(config::links::WEBSITE);
         });
     }
 
     if let Some(link_donate) = page_builder.object::<Button>("link_donate") {
         link_donate.connect_clicked(move |_| {
             info!("Main page: Donate link clicked");
-            let _ = std::process::Command::new("xdg-open")
-                .arg("https://ko-fi.com/xerolinux")
-                .spawn();
+            let _ = utils::open_url(config::links::DONATE);
         });
     }
 }

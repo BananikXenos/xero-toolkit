@@ -4,8 +4,8 @@
 
   <object class="GtkApplicationWindow" id="app_window">
     <property name="title">Xero Toolkit</property>
-    <property name="default-width">1000</property>
-    <property name="default-height">900</property>
+    <property name="default-width">1050</property>
+    <property name="default-height">650</property>
 
     <!-- Main Paned Content (sidebar + right split) -->
     <child>
@@ -123,7 +123,10 @@
                         <property name="name">customization</property>
                         <property name="title">Customization</property>
                         <property name="child">
-                          <object class="GtkBox" id="page_customization_container">
+                          <object
+                                                        class="GtkBox"
+                                                        id="page_customization_container"
+                                                    >
                             <property name="orientation">vertical</property>
                             <property name="hexpand">true</property>
                             <property name="vexpand">true</property>
@@ -138,7 +141,10 @@
                         <property name="name">gaming_tools</property>
                         <property name="title">Gaming Tools</property>
                         <property name="child">
-                          <object class="GtkBox" id="page_gaming_tools_container">
+                          <object
+                                                        class="GtkBox"
+                                                        id="page_gaming_tools_container"
+                                                    >
                             <property name="orientation">vertical</property>
                             <property name="hexpand">true</property>
                             <property name="vexpand">true</property>
@@ -153,7 +159,10 @@
                         <property name="name">containers_vms</property>
                         <property name="title">Containers/VMs</property>
                         <property name="child">
-                          <object class="GtkBox" id="page_containers_vms_container">
+                          <object
+                                                        class="GtkBox"
+                                                        id="page_containers_vms_container"
+                                                    >
                             <property name="orientation">vertical</property>
                             <property name="hexpand">true</property>
                             <property name="vexpand">true</property>
@@ -168,7 +177,10 @@
                         <property name="name">multimedia_tools</property>
                         <property name="title">Multimedia Tools</property>
                         <property name="child">
-                          <object class="GtkBox" id="page_multimedia_tools_container">
+                          <object
+                                                        class="GtkBox"
+                                                        id="page_multimedia_tools_container"
+                                                    >
                             <property name="orientation">vertical</property>
                             <property name="hexpand">true</property>
                             <property name="vexpand">true</property>
@@ -183,7 +195,10 @@
                         <property name="name">kernel_manager_scx</property>
                         <property name="title">Kernel Manager/SCX</property>
                         <property name="child">
-                          <object class="GtkBox" id="page_kernel_manager_scx_container">
+                          <object
+                                                        class="GtkBox"
+                                                        id="page_kernel_manager_scx_container"
+                                                    >
                             <property name="orientation">vertical</property>
                             <property name="hexpand">true</property>
                             <property name="vexpand">true</property>
@@ -196,9 +211,14 @@
                     <child>
                       <object class="GtkStackPage">
                         <property name="name">servicing_system_tweaks</property>
-                        <property name="title">Servicing/System tweaks</property>
+                        <property
+                                                    name="title"
+                                                >Servicing/System tweaks</property>
                         <property name="child">
-                          <object class="GtkBox" id="page_servicing_system_tweaks_container">
+                          <object
+                                                        class="GtkBox"
+                                                        id="page_servicing_system_tweaks_container"
+                                                    >
                             <property name="orientation">vertical</property>
                             <property name="hexpand">true</property>
                             <property name="vexpand">true</property>

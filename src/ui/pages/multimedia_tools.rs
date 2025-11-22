@@ -9,7 +9,7 @@ use crate::ui::command_execution as progress_dialog;
 use crate::ui::selection_dialog;
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder};
-use log::{info};
+use log::info;
 
 /// Set up all button handlers for the multimedia tools page
 pub fn setup_handlers(page_builder: &Builder, _main_builder: &Builder) {
