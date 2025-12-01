@@ -9,10 +9,10 @@
 
 pub mod app;
 pub mod command_execution;
+pub mod dialogs;
 pub mod pages;
 pub mod selection_dialog;
 pub mod tabs;
-pub mod dialogs;
 
 // Re-export commonly used items
 pub use app::setup_application_ui;

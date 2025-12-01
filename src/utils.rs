@@ -3,7 +3,7 @@
 use log::debug;
 use std::env;
 use std::os::unix::fs::PermissionsExt;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 
 /// Detect available AUR helper in priority order.
 ///

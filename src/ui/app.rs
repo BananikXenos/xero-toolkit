@@ -17,7 +17,7 @@ pub fn setup_application_ui(app: &Application) {
     let builder = Builder::from_resource("/xyz/xerolinux/xero-toolkit/ui/main.ui");
     let window = create_main_window(app, &builder);
 
-    window.show();
+    window.present();
 
     info!("Checking system dependencies");
     if !crate::core::check_system_requirements(&window) {

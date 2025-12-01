@@ -90,6 +90,9 @@ impl RunningCommandContext {
         // Handle result
         match result {
             CommandResult::Success => {
+                // Mark task as successful
+                self.widgets
+                    .update_task_status(self.index, super::types::TaskStatus::Success);
                 append_output(&self.widgets, "✓ Step completed successfully\n", false);
                 execute_commands_sequence(
                     self.widgets.clone(),
@@ -101,6 +104,9 @@ impl RunningCommandContext {
                 );
             }
             CommandResult::Failure { exit_code } => {
+                // Mark task as failed
+                self.widgets
+                    .update_task_status(self.index, super::types::TaskStatus::Failed);
                 if let Some(code) = exit_code {
                     append_output(
                         &self.widgets,

@@ -40,7 +40,8 @@ pub fn execute_commands_sequence(
     let cmd = &commands[index];
     let total = commands.len();
 
-    widgets.update_progress(index + 1, total);
+    // Mark current task as running
+    widgets.update_task_status(index, super::types::TaskStatus::Running);
     widgets.set_title(&cmd.friendly_name);
 
     append_output(

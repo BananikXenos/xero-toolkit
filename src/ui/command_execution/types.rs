@@ -1,18 +1,29 @@
 //! Types and enums for command execution.
 
-/// Command execution context (privilege, helpers, etc.)
+/// Type of command to execute
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CommandType {
-    /// Normal command execution
+    /// Normal command (no special handling)
     Normal,
-    /// Privileged command execution (via pkexec)
+    /// Command that needs privilege escalation (pkexec)
     Privileged,
-    /// AUR helper command execution (paru/yay)
+    /// AUR helper command (paru/yay)
     Aur,
 }
 
-/// Command to execute with metadata
-#[derive(Clone, Debug)]
+/// Status of a task in the UI
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TaskStatus {
+    /// Task is pending (not started yet)
+    Pending,
+    /// Task is currently running
+    Running,
+    /// Task completed successfully
+    Success,
+    /// Task failed with error
+    Failed,
+}
+
 pub struct CommandStep {
     pub command_type: CommandType,
     pub command: String,

@@ -13,6 +13,7 @@
 
 use crate::core;
 use crate::ui::command_execution as progress_dialog;
+use crate::ui::dialogs::show_error;
 use crate::ui::selection_dialog;
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder};
@@ -138,16 +139,7 @@ fn setup_vm_guest_utils(page_builder: &Builder) {
                                 .root()
                                 .and_then(|r| r.downcast::<ApplicationWindow>().ok())
                             {
-                                let dialog = gtk4::MessageDialog::builder()
-                                    .transient_for(&window)
-                                    .modal(true)
-                                    .message_type(gtk4::MessageType::Error)
-                                    .buttons(gtk4::ButtonsType::Ok)
-                                    .text("Error")
-                                    .secondary_text("Unsupported or no virtualization detected.")
-                                    .build();
-                                dialog.connect_response(|d, _| d.close());
-                                dialog.present();
+                                show_error(&window, "Unsupported or no virtualization detected.");
                             }
                             return;
                         }
@@ -159,16 +151,7 @@ fn setup_vm_guest_utils(page_builder: &Builder) {
                         .root()
                         .and_then(|r| r.downcast::<ApplicationWindow>().ok())
                     {
-                        let dialog = gtk4::MessageDialog::builder()
-                            .transient_for(&window)
-                            .modal(true)
-                            .message_type(gtk4::MessageType::Error)
-                            .buttons(gtk4::ButtonsType::Ok)
-                            .text("Error")
-                            .secondary_text("Failed to detect virtualization environment.")
-                            .build();
-                        dialog.connect_response(|d, _| d.close());
-                        dialog.present();
+                        show_error(&window, "Failed to detect virtualization environment.");
                     }
                     return;
                 }

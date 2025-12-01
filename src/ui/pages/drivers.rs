@@ -6,8 +6,8 @@
 //! - ASUS ROG laptop tools
 
 use crate::ui::command_execution as progress_dialog;
-use crate::ui::selection_dialog;
 use crate::ui::dialogs::show_error;
+use crate::ui::selection_dialog;
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder};
 use log::{info, warn};

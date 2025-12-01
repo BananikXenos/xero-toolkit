@@ -41,7 +41,7 @@ mod widgets;
 
 use gtk4::glib;
 use gtk4::prelude::*;
-use gtk4::{Button, Expander, Label, ProgressBar, TextTag, TextView, Window};
+use gtk4::{Button, Label, Separator, TextBuffer, TextTag, TextView, Window};
 use log::{error, warn};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -51,7 +51,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 pub use types::CommandStep;
 
 use executor::execute_commands_sequence;
-use widgets::WidgetsBuilder;
+use widgets::{CommandExecutionWidgets, TaskItem};
 
 /// Global flag to track if an action is currently running
 static ACTION_RUNNING: AtomicBool = AtomicBool::new(false);
@@ -111,34 +111,35 @@ pub fn run_commands_with_progress(
     // Convert callback to Rc for use across non-Send contexts
     let on_complete = on_complete.map(|cb| Rc::new(cb) as Rc<dyn Fn(bool) + 'static>);
 
-    let builder = gtk4::Builder::from_resource("/xyz/xerolinux/xero-toolkit/ui/progress_dialog.ui");
+    let builder =
+        gtk4::Builder::from_resource("/xyz/xerolinux/xero-toolkit/ui/task_list_dialog.ui");
 
     let window: Window = builder
-        .object("progress_window")
-        .expect("Failed to get progress_window");
+        .object("task_window")
+        .expect("Failed to get task_window");
     let title_label: Label = builder
-        .object("progress_title")
-        .expect("Failed to get progress_title");
-    let progress_bar: ProgressBar = builder
-        .object("progress_bar")
-        .expect("Failed to get progress_bar");
-    let output_view: TextView = builder
-        .object("output_view")
-        .expect("Failed to get output_view");
+        .object("task_title")
+        .expect("Failed to get task_title");
+    let task_list_container: gtk4::Box = builder
+        .object("task_list_container")
+        .expect("Failed to get task_list_container");
     let cancel_button: Button = builder
         .object("cancel_button")
         .expect("Failed to get cancel_button");
     let close_button: Button = builder
         .object("close_button")
         .expect("Failed to get close_button");
-    let expander: Expander = builder
-        .object("output_expander")
-        .expect("Failed to get output_expander");
 
     window.set_transient_for(Some(parent));
     window.set_title(Some(title));
 
-    let output_buffer = output_view.buffer();
+    // Create output buffer and view (not in UI file, we'll add it dynamically)
+    let output_buffer = TextBuffer::new(None::<&gtk4::TextTagTable>);
+    let output_view = TextView::new();
+    output_view.set_buffer(Some(&output_buffer));
+    output_view.set_editable(false);
+    output_view.set_monospace(true);
+    output_view.set_wrap_mode(gtk4::WrapMode::WordChar);
 
     // Create a tag for error text
     let error_tag = TextTag::new(Some("error"));
@@ -146,16 +147,30 @@ pub fn run_commands_with_progress(
     error_tag.set_weight(700); // bold
     output_buffer.tag_table().add(&error_tag);
 
-    let widgets = WidgetsBuilder::new(
-        window.clone(),
+    // Create task items for each command
+    let mut task_items = Vec::new();
+    for (i, cmd) in commands.iter().enumerate() {
+        let task_item = TaskItem::new(&cmd.friendly_name);
+        task_item.set_status(types::TaskStatus::Pending);
+        task_list_container.append(&task_item.container);
+        // Add separator between tasks (not before the first if preferred)
+        if i < commands.len() - 1 {
+            let sep = Separator::new(gtk4::Orientation::Horizontal);
+            task_list_container.append(&sep);
+        }
+        task_items.push(task_item);
+    }
+
+    let widgets = Rc::new(CommandExecutionWidgets {
+        window: window.clone(),
         title_label,
-        progress_bar,
+        task_list_container,
+        output_buffer,
         output_view,
-        cancel_button.clone(),
-        close_button.clone(),
-        expander,
-    )
-    .build();
+        cancel_button: cancel_button.clone(),
+        close_button: close_button.clone(),
+        task_items,
+    });
 
     let cancelled = Rc::new(RefCell::new(false));
     let current_process = Rc::new(RefCell::new(None::<gtk4::gio::Subprocess>));

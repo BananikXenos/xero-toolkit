@@ -1,102 +1,120 @@
 //! UI widgets for command execution dialog.
 
+use super::types::TaskStatus;
 use gtk4::prelude::*;
-use gtk4::{Button, Expander, Label, ProgressBar, TextBuffer, TextView, Window};
-use std::rc::Rc;
+use gtk4::{Box as GtkBox, Button, Label, TextBuffer, TextView, Window};
 
 /// Container for all command execution dialog widgets
 pub struct CommandExecutionWidgets {
     pub window: Window,
     pub title_label: Label,
-    pub progress_bar: ProgressBar,
-    pub output_view: TextView,
+    #[allow(dead_code)]
+    pub task_list_container: GtkBox,
     pub output_buffer: TextBuffer,
+    pub output_view: TextView,
     pub cancel_button: Button,
     pub close_button: Button,
-    pub expander: Expander,
+    pub task_items: Vec<TaskItem>,
 }
 
-/// Builder for CommandExecutionWidgets
-pub struct WidgetsBuilder {
-    window: Window,
-    title_label: Label,
-    progress_bar: ProgressBar,
-    output_view: TextView,
-    cancel_button: Button,
-    close_button: Button,
-    expander: Expander,
+/// A single task item in the task list
+pub struct TaskItem {
+    pub container: GtkBox,
+    pub status_icon: Label,
+    pub spinner: gtk4::Spinner,
 }
 
-impl WidgetsBuilder {
-    /// Create a new builder
-    pub fn new(
-        window: Window,
-        title_label: Label,
-        progress_bar: ProgressBar,
-        output_view: TextView,
-        cancel_button: Button,
-        close_button: Button,
-        expander: Expander,
-    ) -> Self {
+impl TaskItem {
+    /// Create a new task item
+    pub fn new(description: &str) -> Self {
+        let container = GtkBox::new(gtk4::Orientation::Horizontal, 12);
+        container.set_margin_top(8);
+        container.set_margin_bottom(8);
+        container.set_margin_start(12);
+        container.set_margin_end(12);
+
+        // Task description label
+        let label = Label::new(Some(description));
+        label.set_xalign(0.0);
+        label.set_hexpand(true);
+        label.set_wrap(true);
+
+        // Spinner for running state
+        let spinner = gtk4::Spinner::new();
+        spinner.set_visible(false);
+
+        // Status icon label
+        let status_icon = Label::new(None);
+        status_icon.set_visible(false);
+
+        container.append(&label);
+        container.append(&spinner);
+        container.append(&status_icon);
+
         Self {
-            window,
-            title_label,
-            progress_bar,
-            output_view,
-            cancel_button,
-            close_button,
-            expander,
+            container,
+            status_icon,
+            spinner,
         }
     }
 
-    /// Build the widgets container
-    pub fn build(self) -> Rc<CommandExecutionWidgets> {
-        let output_buffer = self.output_view.buffer();
-        Rc::new(CommandExecutionWidgets {
-            window: self.window,
-            title_label: self.title_label,
-            progress_bar: self.progress_bar,
-            output_view: self.output_view,
-            output_buffer,
-            cancel_button: self.cancel_button,
-            close_button: self.close_button,
-            expander: self.expander,
-        })
+    /// Update the status of this task item
+    pub fn set_status(&self, status: TaskStatus) {
+        match status {
+            TaskStatus::Pending => {
+                self.spinner.set_visible(false);
+                self.status_icon.set_visible(false);
+            }
+            TaskStatus::Running => {
+                self.spinner.set_spinning(true);
+                self.spinner.set_visible(true);
+                self.status_icon.set_visible(false);
+            }
+            TaskStatus::Success => {
+                self.spinner.set_spinning(false);
+                self.spinner.set_visible(false);
+                self.status_icon.set_text("✓");
+                self.status_icon.set_visible(true);
+            }
+            TaskStatus::Failed => {
+                self.spinner.set_spinning(false);
+                self.spinner.set_visible(false);
+                self.status_icon.set_text("✗");
+                self.status_icon.set_visible(true);
+            }
+        }
     }
 }
 
 impl CommandExecutionWidgets {
-    /// Update progress bar with current step information
-    pub fn update_progress(&self, current: usize, total: usize) {
-        let progress = (current as f64) / (total as f64);
-        self.progress_bar.set_fraction(progress);
-        self.progress_bar
-            .set_text(Some(&format!("Step {} of {}", current, total)));
-    }
-
-    /// Set the title label text
-    pub fn set_title(&self, title: &str) {
-        self.title_label.set_label(title);
-    }
-
-    /// Show completion state
-    pub fn show_completion(&self, success: bool, message: &str) {
-        self.set_title(message);
-        self.cancel_button.set_visible(false);
-        self.close_button.set_visible(true);
-        self.close_button.set_sensitive(true);
-
-        if success {
-            self.progress_bar.set_fraction(1.0);
-            self.progress_bar.set_text(Some("Completed"));
-        } else {
-            // Expand output on error
-            self.expander.set_expanded(true);
+    /// Update the status of a specific task
+    pub fn update_task_status(&self, index: usize, status: TaskStatus) {
+        if let Some(task_item) = self.task_items.get(index) {
+            task_item.set_status(status);
         }
     }
 
-    /// Disable the cancel button (when cancellation is in progress)
+    /// Set the dialog title
+    pub fn set_title(&self, title: &str) {
+        self.title_label.set_text(title);
+    }
+
+    /// Disable the cancel button
     pub fn disable_cancel(&self) {
         self.cancel_button.set_sensitive(false);
+    }
+
+    /// Enable the close button and hide cancel button
+    pub fn enable_close(&self) {
+        self.cancel_button.set_visible(false);
+        self.close_button.set_visible(true);
+        self.close_button.set_sensitive(true);
+    }
+
+    /// Show completion state (not needed for task-based UI, kept for compatibility)
+    pub fn show_completion(&self, _success: bool, _message: &str) {
+        // In task-based UI, completion is shown via task statuses
+        // Enable the close button
+        self.enable_close();
     }
 }

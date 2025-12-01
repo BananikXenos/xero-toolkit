@@ -259,7 +259,7 @@ pub fn show_xerolinux_error_dialog(main_window: &ApplicationWindow) {
         std::process::exit(1);
     });
 
-    error_window.show();
+    error_window.present();
 }
 
 /// Show dependency error dialog and prevent app from continuing.
@@ -302,7 +302,7 @@ pub fn show_dependency_error_dialog(
         std::process::exit(1);
     });
 
-    error_window.show();
+    error_window.present();
 }
 
 /// Check system requirements (XeroLinux distribution and dependencies) on app startup.
