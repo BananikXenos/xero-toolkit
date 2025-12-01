@@ -6,6 +6,7 @@ build = "build.rs"
 
 [dependencies]
 gtk4 = { version = "0.10", features = ["v4_20"] }
+adw = { version = "0.8", package = "libadwaita", features = ["v1_6"] }
 log = "0.4"
 simple_logger = "5.1"
 vte4 = "0.9"

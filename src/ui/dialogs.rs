@@ -1,14 +1,15 @@
 //! Shared dialog helpers used across the UI pages.
 
-use gtk4::{AlertDialog, ApplicationWindow};
+use adw::prelude::*;
+use adw::AlertDialog;
+use gtk4::ApplicationWindow;
 
 /// Show an error message dialog transient for the provided window.
 pub fn show_error(window: &ApplicationWindow, message: &str) {
     let dialog = AlertDialog::builder()
-        .message("Error")
-        .detail(message)
-        .modal(true)
+        .heading("Error")
+        .body(message)
         .build();
 
-    dialog.show(Some(window));
+    dialog.present(Some(window));
 }

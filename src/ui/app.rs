@@ -3,9 +3,10 @@
 use crate::config;
 use crate::core::{AppContext, UiComponents};
 use crate::ui::{pages, tabs};
+use adw::prelude::*;
+use adw::Application;
 use gtk4::glib;
-use gtk4::prelude::*;
-use gtk4::{gio, Application, ApplicationWindow, Box as GtkBox, Builder, CssProvider};
+use gtk4::{gio, ApplicationWindow, Box as GtkBox, Builder, CssProvider};
 use log::{info, warn};
 
 /// Initialize and set up main application UI.

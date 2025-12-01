@@ -1,5 +1,5 @@
-use gtk4::prelude::{ApplicationExt, ApplicationExtManual};
-use gtk4::Application;
+use adw::prelude::*;
+use adw::Application;
 use log::info;
 use std::sync::OnceLock;
 

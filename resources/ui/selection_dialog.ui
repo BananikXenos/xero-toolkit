@@ -1,75 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
     <requires lib="gtk" version="4.0"/>
+    <requires lib="adw" version="1.0"/>
 
-    <object class="GtkWindow" id="selection_dialog">
+    <object class="AdwWindow" id="selection_dialog">
         <property name="title">Select Options</property>
         <property name="default-width">600</property>
         <property name="default-height">480</property>
         <property name="modal">true</property>
-        <property name="resizable">true</property>
 
-        <child>
-            <object class="GtkBox">
-                <property name="orientation">vertical</property>
-                <property name="spacing">12</property>
-                <property name="margin-top">12</property>
-                <property name="margin-bottom">12</property>
-                <property name="margin-start">12</property>
-                <property name="margin-end">12</property>
-
-                <child>
-                    <object class="GtkLabel" id="dialog_title">
-                        <property name="label">Title</property>
-                        <property name="css-classes">title-2</property>
-                        <property name="wrap">true</property>
-                        <property name="xalign">0</property>
+        <property name="content">
+            <object class="AdwToolbarView">
+                <child type="top">
+                    <object class="AdwHeaderBar">
+                        <property name="show-end-title-buttons">true</property>
                     </object>
                 </child>
 
-                <child>
-                    <object class="GtkLabel" id="dialog_description">
-                        <property name="label">Subtitle</property>
-                        <property name="css-classes">dim</property>
-                        <property name="wrap">true</property>
-                        <property name="xalign">0</property>
-                    </object>
-                </child>
-
-                <child>
-                    <object class="GtkScrolledWindow">
-                        <property name="hexpand">true</property>
-                        <property name="vexpand">true</property>
-                        <child>
-                            <object class="GtkBox" id="options_container">
-                                <property name="orientation">vertical</property>
-                                <property name="spacing">8</property>
-                            </object>
-                        </child>
-                    </object>
-                </child>
-
-                <child>
+                <property name="content">
                     <object class="GtkBox">
-                        <property name="orientation">horizontal</property>
-                        <property name="spacing">8</property>
-                        <property name="halign">end</property>
+                        <property name="orientation">vertical</property>
+                        <property name="spacing">12</property>
+                        <property name="margin-top">12</property>
+                        <property name="margin-bottom">12</property>
+                        <property name="margin-start">12</property>
+                        <property name="margin-end">12</property>
 
                         <child>
-                            <object class="GtkButton" id="cancel_button">
-                                <property name="label">Cancel</property>
+                            <object class="GtkLabel" id="dialog_title">
+                                <property name="label">Title</property>
+                                <property name="css-classes">title-2</property>
+                                <property name="wrap">true</property>
+                                <property name="xalign">0</property>
                             </object>
                         </child>
 
                         <child>
-                            <object class="GtkButton" id="confirm_button">
-                                <property name="label">Confirm</property>
-                                <property name="css-classes">suggested-action</property>
+                            <object class="GtkLabel" id="dialog_description">
+                                <property name="label">Subtitle</property>
+                                <property name="css-classes">dim</property>
+                                <property name="wrap">true</property>
+                                <property name="xalign">0</property>
+                            </object>
+                        </child>
+
+                        <child>
+                            <object class="GtkScrolledWindow">
+                                <property name="hexpand">true</property>
+                                <property name="vexpand">true</property>
+                                <child>
+                                    <object class="GtkBox" id="options_container">
+                                        <property name="orientation">vertical</property>
+                                        <property name="spacing">8</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+
+                        <child>
+                            <object class="GtkBox">
+                                <property name="orientation">horizontal</property>
+                                <property name="spacing">8</property>
+                                <property name="halign">end</property>
+
+                                <child>
+                                    <object class="GtkButton" id="cancel_button">
+                                        <property name="label">Cancel</property>
+                                    </object>
+                                </child>
+
+                                <child>
+                                    <object class="GtkButton" id="confirm_button">
+                                        <property name="label">Confirm</property>
+                                        <property name="css-classes">suggested-action</property>
+                                    </object>
+                                </child>
                             </object>
                         </child>
                     </object>
-                </child>
+                </property>
             </object>
-        </child>
+        </property>
     </object>
 </interface>

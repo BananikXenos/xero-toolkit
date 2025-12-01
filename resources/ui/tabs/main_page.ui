@@ -105,6 +105,7 @@
                                 <property name="label">Test Scrolling</property>
                                 <property name="width-request">200</property>
                                 <property name="height-request">50</property>
+                                <property name="css-classes">suggested-action</property>
                             </object>
                         </child>
                     </object>
@@ -133,7 +134,7 @@
                         <property name="tooltip-text">Discord - https://discord.xerolinux.xyz/</property>
                         <property name="width-request">48</property>
                         <property name="height-request">48</property>
-                        <property name="css-classes">circular</property>
+                        <property name="css-classes">circular flat</property>
                         <child>
                             <object class="GtkImage">
                                 <property name="icon-name">discord-symbolic</property>
@@ -148,7 +149,7 @@
                         <property name="tooltip-text">YouTube - https://www.youtube.com/@XeroLinux</property>
                         <property name="width-request">48</property>
                         <property name="height-request">48</property>
-                        <property name="css-classes">circular</property>
+                        <property name="css-classes">circular flat</property>
                         <child>
                             <object class="GtkImage">
                                 <property name="icon-name">youtube-symbolic</property>
@@ -163,7 +164,7 @@
                         <property name="tooltip-text">XeroLinux Website - https://xerolinux.xyz/</property>
                         <property name="width-request">48</property>
                         <property name="height-request">48</property>
-                        <property name="css-classes">circular</property>
+                        <property name="css-classes">circular flat</property>
                         <child>
                             <object class="GtkImage">
                                 <property name="icon-name">globe-symbolic</property>
@@ -178,7 +179,7 @@
                         <property name="tooltip-text">Donate - https://ko-fi.com/xerolinux</property>
                         <property name="width-request">48</property>
                         <property name="height-request">48</property>
-                        <property name="css-classes">circular</property>
+                        <property name="css-classes">circular flat</property>
                         <child>
                             <object class="GtkImage">
                                 <property name="icon-name">coffee-symbolic</property>
