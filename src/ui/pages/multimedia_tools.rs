@@ -5,8 +5,10 @@
 //! - Jellyfin server installation
 
 use crate::core;
-use crate::ui::command_execution as progress_dialog;
-use crate::ui::selection_dialog;
+use crate::ui::dialogs::selection::{
+    show_selection_dialog, SelectionDialogConfig, SelectionOption,
+};
+use crate::ui::task_runner::{self, Command};
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder};
 use log::info;
@@ -50,41 +52,41 @@ fn setup_obs_studio_aio(page_builder: &Builder) {
                     core::is_flatpak_installed("com.obsproject.Studio.Plugin.VerticalCanvas") &&
                     core::is_flatpak_installed("com.obsproject.Studio.Plugin.BackgroundRemoval");
 
-                let config = selection_dialog::SelectionDialogConfig::new(
+                let config = SelectionDialogConfig::new(
                     "OBS-Studio AiO Installation",
                     "Select which components to install. All options are optional.",
                 )
-                .add_option(selection_dialog::SelectionOption::new(
+                .add_option(SelectionOption::new(
                     "obs",
                     "OBS-Studio",
                     "Main OBS-Studio application (Flatpak)",
                     obs_installed,
                 ))
-                .add_option(selection_dialog::SelectionOption::new(
+                .add_option(SelectionOption::new(
                     "graphics_capture",
                     "Graphics Capture Plugins",
                     "VkCapture, GStreamer, GStreamer VA-API",
                     graphics_capture_installed,
                 ))
-                .add_option(selection_dialog::SelectionOption::new(
+                .add_option(SelectionOption::new(
                     "transitions_effects",
                     "Transitions & Effects",
                     "Move Transition, Transition Table, Scale to Sound",
                     transitions_effects_installed,
                 ))
-                .add_option(selection_dialog::SelectionOption::new(
+                .add_option(SelectionOption::new(
                     "streaming_tools",
                     "Streaming & Recording Tools",
                     "WebSocket API, Scene Switcher, DroidCam",
                     streaming_tools_installed,
                 ))
-                .add_option(selection_dialog::SelectionOption::new(
+                .add_option(SelectionOption::new(
                     "audio_video_tools",
                     "Audio & Video Tools",
                     "Waveform, Vertical Canvas, Background Removal",
                     audio_video_tools_installed,
                 ))
-                .add_option(selection_dialog::SelectionOption::new(
+                .add_option(SelectionOption::new(
                     "v4l2",
                     "V4L2loopback Virtual Camera",
                     "Enable OBS virtual camera functionality",
@@ -92,18 +94,18 @@ fn setup_obs_studio_aio(page_builder: &Builder) {
                 ))
                 .confirm_label("Install");
 
-                selection_dialog::show_selection_dialog(window_ref, config, move |selected_ids| {
-                    let mut commands: Vec<progress_dialog::CommandStep> = vec![];
+                show_selection_dialog(window_ref, config, move |selected_ids| {
+                    let mut commands: Vec<Command> = vec![];
 
                     if selected_ids.contains(&"obs".to_string()) {
-                        commands.push(progress_dialog::CommandStep::normal(
+                        commands.push(Command::normal(
                             "flatpak",
                             &["install", "-y", "com.obsproject.Studio"],
                             "Installing OBS-Studio...",
                         ));
                     }
                     if selected_ids.contains(&"graphics_capture".to_string()) {
-                        commands.push(progress_dialog::CommandStep::normal(
+                        commands.push(Command::normal(
                             "flatpak",
                             &[
                                 "install",
@@ -117,7 +119,7 @@ fn setup_obs_studio_aio(page_builder: &Builder) {
                         ));
                     }
                     if selected_ids.contains(&"transitions_effects".to_string()) {
-                        commands.push(progress_dialog::CommandStep::normal(
+                        commands.push(Command::normal(
                             "flatpak",
                             &[
                                 "install",
@@ -130,7 +132,7 @@ fn setup_obs_studio_aio(page_builder: &Builder) {
                         ));
                     }
                     if selected_ids.contains(&"streaming_tools".to_string()) {
-                        commands.push(progress_dialog::CommandStep::normal(
+                        commands.push(Command::normal(
                             "flatpak",
                             &[
                                 "install",
@@ -143,7 +145,7 @@ fn setup_obs_studio_aio(page_builder: &Builder) {
                         ));
                     }
                     if selected_ids.contains(&"audio_video_tools".to_string()) {
-                        commands.push(progress_dialog::CommandStep::normal(
+                        commands.push(Command::normal(
                             "flatpak",
                             &[
                                 "install",
@@ -156,16 +158,16 @@ fn setup_obs_studio_aio(page_builder: &Builder) {
                         ));
                     }
                     if selected_ids.contains(&"v4l2".to_string()) {
-                        commands.push(progress_dialog::CommandStep::aur(
+                        commands.push(Command::aur(
                             &["-S", "--noconfirm", "--needed", "v4l2loopback-dkms", "v4l2loopback-utils"],
                             "Installing V4L2 loopback modules...",
                         ));
-                        commands.push(progress_dialog::CommandStep::privileged(
+                        commands.push(Command::privileged(
                             "sh",
                             &["-c", "echo 'v4l2loopback' > /etc/modules-load.d/v4l2loopback.conf"],
                             "Enabling V4L2 loopback module at boot...",
                         ));
-                        commands.push(progress_dialog::CommandStep::privileged(
+                        commands.push(Command::privileged(
                             "sh",
                             &[
                                 "-c",
@@ -177,7 +179,7 @@ fn setup_obs_studio_aio(page_builder: &Builder) {
 
                     if !commands.is_empty() {
                         let window_ref2 = window_clone.upcast_ref::<gtk4::Window>();
-                        progress_dialog::run_commands_with_progress(
+                        task_runner::run(
                             window_ref2,
                             commands,
                             "OBS-Studio Setup",
@@ -195,7 +197,7 @@ fn setup_jellyfin(page_builder: &Builder) {
         btn_jellyfin.connect_clicked(move |button| {
             info!("Multimedia tools: Jellyfin button clicked");
             let commands = vec![
-                progress_dialog::CommandStep::aur(
+                Command::aur(
                     &[
                         "-S",
                         "--noconfirm",
@@ -206,7 +208,7 @@ fn setup_jellyfin(page_builder: &Builder) {
                     ],
                     "Installing Jellyfin server and components...",
                 ),
-                progress_dialog::CommandStep::privileged(
+                Command::privileged(
                     "systemctl",
                     &["enable", "--now", "jellyfin.service"],
                     "Starting Jellyfin service...",
@@ -219,12 +221,7 @@ fn setup_jellyfin(page_builder: &Builder) {
                 .and_then(|r| r.downcast::<ApplicationWindow>().ok());
             if let Some(window) = window {
                 let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "Jellyfin Server Setup",
-                    None,
-                );
+                task_runner::run(window_ref, commands, "Jellyfin Server Setup", None);
             }
         });
     }

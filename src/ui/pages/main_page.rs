@@ -3,232 +3,227 @@
 //! Handles:
 //! - System update
 //! - Package manager GUI installation
+//! - Download Arch ISO
 //! - External links (Discord, YouTube, Website, Donate)
 
 use crate::config;
 use crate::core;
-use crate::ui::command_execution as progress_dialog;
-use crate::ui::selection_dialog;
-use crate::utils;
+use crate::ui::dialogs::download::show_download_dialog;
+use crate::ui::dialogs::selection::{
+    show_selection_dialog, SelectionDialogConfig, SelectionOption,
+};
+use crate::ui::task_runner::{self, Command};
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder, Button};
 use log::info;
 
-/// Set up all button handlers for the main page
+/// Set up all button handlers for the main page.
 pub fn setup_handlers(page_builder: &Builder, _main_builder: &Builder) {
-    setup_update_system_button(page_builder);
-    setup_pkg_manager_button(page_builder);
-    setup_download_arch_iso_button(page_builder);
+    setup_update_system(page_builder);
+    setup_pkg_manager(page_builder);
+    setup_download_arch_iso(page_builder);
     setup_external_links(page_builder);
 }
 
-/// Setup system update button
-fn setup_update_system_button(page_builder: &Builder) {
-    if let Some(btn_update_system) = page_builder.object::<Button>("btn_update_system") {
-        btn_update_system.connect_clicked(move |button| {
-            info!("Main page: Update System button clicked");
-            let widget = button.clone().upcast::<gtk4::Widget>();
-            let window = widget
-                .root()
-                .and_then(|root| root.downcast::<ApplicationWindow>().ok());
+/// Setup system update button.
+fn setup_update_system(builder: &Builder) {
+    let Some(button) = builder.object::<Button>("btn_update_system") else {
+        return;
+    };
 
-            if let Some(window) = window {
-                let commands = vec![progress_dialog::CommandStep::privileged(
-                    "/usr/local/bin/upd",
-                    &[],
-                    "Updating system packages...",
-                )];
+    button.connect_clicked(move |btn| {
+        info!("Update System button clicked");
 
-                let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "System Update",
-                    None,
-                );
-            }
-        });
-    }
+        let Some(window) = get_window(btn) else {
+            return;
+        };
+
+        let commands = vec![Command::privileged(
+            "/usr/local/bin/upd",
+            &[],
+            "Updating system packages...",
+        )];
+
+        task_runner::run(window.upcast_ref(), commands, "System Update", None);
+    });
 }
 
-/// Setup package manager GUI button
-fn setup_pkg_manager_button(page_builder: &Builder) {
-    if let Some(btn_pkg_manager) = page_builder.object::<Button>("btn_pkg_manager") {
-        btn_pkg_manager.connect_clicked(move |button| {
-            info!("Main page: PKG Manager GUI button clicked");
-            show_pkg_manager_dialog(button);
-        });
-    }
-}
+/// Setup package manager GUI button.
+fn setup_pkg_manager(builder: &Builder) {
+    let Some(button) = builder.object::<Button>("btn_pkg_manager") else {
+        return;
+    };
 
-/// Setup download Arch ISO button
-fn setup_download_arch_iso_button(page_builder: &Builder) {
-    if let Some(btn_download) = page_builder.object::<Button>("btn_download_arch_iso") {
-        btn_download.connect_clicked(move |button| {
-            info!("Main page: Download Arch ISO button clicked");
-            let widget = button.clone().upcast::<gtk4::Widget>();
-            let window = widget
-                .root()
-                .and_then(|root| root.downcast::<ApplicationWindow>().ok());
+    button.connect_clicked(move |btn| {
+        info!("PKG Manager GUI button clicked");
 
-            if let Some(window) = window {
-                let window_ref = window.upcast_ref::<gtk4::Window>();
-                crate::ui::download_dialog::show_download_dialog(window_ref);
-            }
-        });
-    }
-}
+        let Some(window) = get_window(btn) else {
+            return;
+        };
 
-/// Setup external link buttons
-fn setup_external_links(page_builder: &Builder) {
-    if let Some(link_discord) = page_builder.object::<Button>("link_discord") {
-        link_discord.connect_clicked(move |_| {
-            info!("Main page: Discord link clicked");
-            let _ = utils::open_url(config::links::DISCORD);
-        });
-    }
-
-    if let Some(link_youtube) = page_builder.object::<Button>("link_youtube") {
-        link_youtube.connect_clicked(move |_| {
-            info!("Main page: YouTube link clicked");
-            let _ = utils::open_url(config::links::YOUTUBE);
-        });
-    }
-
-    if let Some(link_website) = page_builder.object::<Button>("link_website") {
-        link_website.connect_clicked(move |_| {
-            info!("Main page: XeroLinux website link clicked");
-            let _ = utils::open_url(config::links::WEBSITE);
-        });
-    }
-
-    if let Some(link_donate) = page_builder.object::<Button>("link_donate") {
-        link_donate.connect_clicked(move |_| {
-            info!("Main page: Donate link clicked");
-            let _ = utils::open_url(config::links::DONATE);
-        });
-    }
-}
-
-
-/// Show package manager selection dialog
-fn show_pkg_manager_dialog(button: &Button) {
-    let widget = button.clone().upcast::<gtk4::Widget>();
-    let window = widget
-        .root()
-        .and_then(|root| root.downcast::<ApplicationWindow>().ok());
-
-    if let Some(window) = window {
         let window_clone = window.clone();
-        let window_ref = window.upcast_ref::<gtk4::Window>();
 
         // Check which package managers are already installed
-        let octopi_installed = core::is_package_installed("octopi");
-        let pacseek_installed = core::is_package_installed("pacseek");
-        let bauh_installed = core::is_package_installed("bauh");
-        let warehouse_installed = core::is_flatpak_installed("io.github.flattool.Warehouse");
-        let flatseal_installed = core::is_flatpak_installed("com.github.tchx84.Flatseal");
-        let bazaar_installed = core::is_flatpak_installed("io.github.kolunmi.Bazaar");
-
-        let config = selection_dialog::SelectionDialogConfig::new(
+        let config = SelectionDialogConfig::new(
             "Package Manager GUI Applications",
             "Select which package manager GUIs to install. Multiple selections allowed.",
         )
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "octopi",
             "Octopi",
             "Powerful Pacman GUI with AUR support",
-            octopi_installed,
+            core::is_package_installed("octopi"),
         ))
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "pacseek",
             "PacSeek",
             "Terminal UI package manager with search",
-            pacseek_installed,
+            core::is_package_installed("pacseek"),
         ))
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "bauh",
             "Bauh",
             "Manage Pacman, AUR, Flatpak, Snap packages",
-            bauh_installed,
+            core::is_package_installed("bauh"),
         ))
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "warehouse",
             "Warehouse",
             "Flatpak package manager (Flatpak)",
-            warehouse_installed,
+            core::is_flatpak_installed("io.github.flattool.Warehouse"),
         ))
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "flatseal",
             "Flatseal",
             "Flatpak permissions manager (Flatpak)",
-            flatseal_installed,
+            core::is_flatpak_installed("com.github.tchx84.Flatseal"),
         ))
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "bazaar",
             "Bazaar",
             "Browse and install Flatpak apps (Flatpak)",
-            bazaar_installed,
+            core::is_flatpak_installed("io.github.kolunmi.Bazaar"),
         ))
         .confirm_label("Install");
 
-        selection_dialog::show_selection_dialog(window_ref, config, move |selected_ids| {
-            let mut commands = vec![];
-
-            if selected_ids.contains(&"octopi".to_string()) {
-                commands.push(progress_dialog::CommandStep::aur(
-                    &["-S", "--noconfirm", "--needed", "octopi"],
-                    "Installing Octopi package manager...",
-                ));
-            }
-
-            if selected_ids.contains(&"pacseek".to_string()) {
-                commands.push(progress_dialog::CommandStep::aur(
-                    &["-S", "--noconfirm", "--needed", "pacseek", "pacfinder"],
-                    "Installing PacSeek package browser...",
-                ));
-            }
-
-            if selected_ids.contains(&"bauh".to_string()) {
-                commands.push(progress_dialog::CommandStep::aur(
-                    &["-S", "--noconfirm", "--needed", "bauh"],
-                    "Installing Bauh package manager...",
-                ));
-            }
-
-            if selected_ids.contains(&"warehouse".to_string()) {
-                commands.push(progress_dialog::CommandStep::normal(
-                    "flatpak",
-                    &["install", "-y", "io.github.flattool.Warehouse"],
-                    "Installing Warehouse from Flathub...",
-                ));
-            }
-
-            if selected_ids.contains(&"flatseal".to_string()) {
-                commands.push(progress_dialog::CommandStep::normal(
-                    "flatpak",
-                    &["install", "-y", "com.github.tchx84.Flatseal"],
-                    "Installing Flatseal from Flathub...",
-                ));
-            }
-
-            if selected_ids.contains(&"bazaar".to_string()) {
-                commands.push(progress_dialog::CommandStep::normal(
-                    "flatpak",
-                    &["install", "-y", "io.github.kolunmi.Bazaar"],
-                    "Installing Bazaar from Flathub...",
-                ));
-            }
+        show_selection_dialog(window.upcast_ref(), config, move |selected| {
+            let commands = build_pkg_manager_commands(&selected);
 
             if !commands.is_empty() {
-                let window_ref = window_clone.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
+                task_runner::run(
+                    window_clone.upcast_ref(),
                     commands,
                     "Package Manager GUI Installation",
                     None,
                 );
             }
         });
+    });
+}
+
+/// Build commands for selected package managers.
+fn build_pkg_manager_commands(selected: &[String]) -> Vec<Command> {
+    let mut commands = Vec::new();
+
+    if selected.contains(&"octopi".to_string()) {
+        commands.push(Command::aur(
+            &["-S", "--noconfirm", "--needed", "octopi"],
+            "Installing Octopi package manager...",
+        ));
     }
+
+    if selected.contains(&"pacseek".to_string()) {
+        commands.push(Command::aur(
+            &["-S", "--noconfirm", "--needed", "pacseek", "pacfinder"],
+            "Installing PacSeek package browser...",
+        ));
+    }
+
+    if selected.contains(&"bauh".to_string()) {
+        commands.push(Command::aur(
+            &["-S", "--noconfirm", "--needed", "bauh"],
+            "Installing Bauh package manager...",
+        ));
+    }
+
+    if selected.contains(&"warehouse".to_string()) {
+        commands.push(Command::normal(
+            "flatpak",
+            &["install", "-y", "io.github.flattool.Warehouse"],
+            "Installing Warehouse from Flathub...",
+        ));
+    }
+
+    if selected.contains(&"flatseal".to_string()) {
+        commands.push(Command::normal(
+            "flatpak",
+            &["install", "-y", "com.github.tchx84.Flatseal"],
+            "Installing Flatseal from Flathub...",
+        ));
+    }
+
+    if selected.contains(&"bazaar".to_string()) {
+        commands.push(Command::normal(
+            "flatpak",
+            &["install", "-y", "io.github.kolunmi.Bazaar"],
+            "Installing Bazaar from Flathub...",
+        ));
+    }
+
+    commands
+}
+
+/// Setup download Arch ISO button.
+fn setup_download_arch_iso(builder: &Builder) {
+    let Some(button) = builder.object::<Button>("btn_download_arch_iso") else {
+        return;
+    };
+
+    button.connect_clicked(move |btn| {
+        info!("Download Arch ISO button clicked");
+
+        let Some(window) = get_window(btn) else {
+            return;
+        };
+
+        show_download_dialog(window.upcast_ref());
+    });
+}
+
+/// Setup external link buttons.
+fn setup_external_links(builder: &Builder) {
+    if let Some(btn) = builder.object::<Button>("link_discord") {
+        btn.connect_clicked(|_| {
+            info!("Discord link clicked");
+            let _ = core::package::open_url(config::links::DISCORD);
+        });
+    }
+
+    if let Some(btn) = builder.object::<Button>("link_youtube") {
+        btn.connect_clicked(|_| {
+            info!("YouTube link clicked");
+            let _ = core::package::open_url(config::links::YOUTUBE);
+        });
+    }
+
+    if let Some(btn) = builder.object::<Button>("link_website") {
+        btn.connect_clicked(|_| {
+            info!("Website link clicked");
+            let _ = core::package::open_url(config::links::WEBSITE);
+        });
+    }
+
+    if let Some(btn) = builder.object::<Button>("link_donate") {
+        btn.connect_clicked(|_| {
+            info!("Donate link clicked");
+            let _ = core::package::open_url(config::links::DONATE);
+        });
+    }
+}
+
+/// Helper to get the parent window from a button.
+fn get_window(button: &Button) -> Option<ApplicationWindow> {
+    button
+        .root()
+        .and_then(|root| root.downcast::<ApplicationWindow>().ok())
 }

@@ -1,6 +1,6 @@
 //! Download dialog for showing download progress
 
-use super::download::{
+use crate::core::download::{
     download_file, fetch_arch_iso_info, format_bytes, format_speed, format_time_remaining,
     DownloadState,
 };

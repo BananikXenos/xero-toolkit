@@ -1,15 +1,17 @@
 //! Core functionality and business logic.
 //!
 //! This module contains:
-//! - `context`: Application state and context
-//! - `helpers`: Utility functions for package checking
-//! - `system_check`: System dependency validation
+//! - `aur`: AUR helper detection and management
+//! - `download`: File download functionality
+//! - `package`: Package and flatpak checking utilities
+//! - `system_check`: System dependency and distribution validation
 
-pub mod context;
-pub mod helpers;
+pub mod aur;
+pub mod download;
+pub mod package;
 pub mod system_check;
 
 // Re-export commonly used items
-pub use context::{AppContext, UiComponents};
-pub use helpers::*;
+pub use aur::get as aur_helper;
+pub use package::{is_flatpak_installed, is_package_installed};
 pub use system_check::check_system_requirements;

@@ -1,22 +1,19 @@
-//! User Interface handling functionality.
+//! User interface components and functionality.
 //!
 //! This module contains all UI-related components organized by functionality:
 //! - `app`: Application setup and initialization
+//! - `context`: Application state and UI components
+//! - `navigation`: Tab navigation and sidebar management
+//! - `dialogs`: Dialog windows (error, selection, download)
+//! - `task_runner`: Command execution with progress UI
 //! - `pages`: Page-specific button handlers
-//! - `tabs`: Tab navigation and management
-//! - `command_execution`: Command execution flow with progress UI
-//! - `selection_dialog`: Reusable multi-choice selection dialogs
-//! - `download`: File download functionality
-//! - `download_dialog`: Download dialog UI
 
 pub mod app;
-pub mod command_execution;
+pub mod context;
 pub mod dialogs;
-pub mod download;
-pub mod download_dialog;
+pub mod navigation;
 pub mod pages;
-pub mod selection_dialog;
-pub mod tabs;
+pub mod task_runner;
 
-// Re-export commonly used items
+// Re-export the main entry point
 pub use app::setup_application_ui;

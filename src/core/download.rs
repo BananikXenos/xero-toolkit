@@ -1,7 +1,7 @@
 //! Download manager with progress tracking
 
-use std::error;
-use log::{error, info};
+use anyhow::{Context, Result};
+use log::info;
 use regex::Regex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -20,16 +20,24 @@ pub struct DownloadState {
 }
 
 /// Fetch the latest Arch Linux ISO information
-pub async fn fetch_arch_iso_info() -> Result<(String, String), Box<dyn error::Error>> {
+pub async fn fetch_arch_iso_info() -> Result<(String, String)> {
     info!("Fetching Arch Linux ISO information...");
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
-        .build()?;
+        .build()
+        .context("Failed to build HTTP client")?;
 
     // Use LeaseWeb mirror (same as bash script)
     let base_url = "https://mirror.fra10.de.leaseweb.net/archlinux/iso/latest/";
-    let html = client.get(base_url).send().await?.text().await?;
+    let html = client
+        .get(base_url)
+        .send()
+        .await
+        .context("Failed to fetch ISO listing")?
+        .text()
+        .await
+        .context("Failed to read response body")?;
 
     // Find ISO filename using regex pattern matching
     // Pattern: archlinux-YYYY.MM.DD-x86_64.iso
@@ -38,7 +46,7 @@ pub async fn fetch_arch_iso_info() -> Result<(String, String), Box<dyn error::Er
     let iso_name = re
         .find(&html)
         .map(|m| m.as_str().to_string())
-        .ok_or("Could not detect ISO filename")?;
+        .context("Could not detect ISO filename in mirror listing")?;
 
     // Construct download URL
     let download_url = format!("{}{}", base_url, iso_name);
@@ -54,7 +62,7 @@ pub async fn download_file<F>(
     progress_callback: F,
     pause_flag: Arc<AtomicBool>,
     cancel_flag: Arc<AtomicBool>,
-) -> Result<(), Box<dyn error::Error>>
+) -> Result<()>
 where
     F: Fn(DownloadState) + Send + 'static,
 {
@@ -67,14 +75,25 @@ where
     // We handle cancellation manually via the cancel_flag
     let client = reqwest::Client::builder()
         .connect_timeout(Duration::from_secs(30))
-        .build()?;
+        .build()
+        .context("Failed to build HTTP client")?;
 
-    let response = client.get(&url).send().await?;
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .context("Failed to connect to download server")?;
     let total_size = response.content_length().unwrap_or(0);
 
-    info!("Download size: {} bytes ({:.2} MB)", total_size, total_size as f64 / 1024.0 / 1024.0);
+    info!(
+        "Download size: {} bytes ({:.2} MB)",
+        total_size,
+        total_size as f64 / 1024.0 / 1024.0
+    );
 
-    let mut file = tokio::fs::File::create(&dest_path).await?;
+    let mut file = tokio::fs::File::create(&dest_path)
+        .await
+        .context("Failed to create destination file")?;
     let mut stream = response.bytes_stream();
 
     let mut downloaded: u64 = 0;
@@ -92,7 +111,7 @@ where
             info!("Download cancelled");
             drop(file);
             let _ = tokio::fs::remove_file(&dest_path).await;
-            return Err("Download cancelled".into());
+            anyhow::bail!("Download cancelled");
         }
 
         // Handle pause
@@ -102,17 +121,11 @@ where
                 info!("Download cancelled while paused");
                 drop(file);
                 let _ = tokio::fs::remove_file(&dest_path).await;
-                return Err("Download cancelled".into());
+                anyhow::bail!("Download cancelled");
             }
         }
 
-        let chunk = match chunk_result {
-            Ok(c) => c,
-            Err(e) => {
-                error!("Error receiving chunk: {}", e);
-                return Err(Box::new(e));
-            }
-        };
+        let chunk = chunk_result.context("Error receiving data chunk")?;
 
         file.write_all(&chunk).await?;
         downloaded += chunk.len() as u64;
@@ -154,7 +167,6 @@ where
 
     file.flush().await?;
     drop(file);
-
 
     // Final update
     let state = DownloadState {
@@ -211,4 +223,3 @@ pub fn format_time_remaining(seconds: u64) -> String {
         format!("{}s", secs)
     }
 }
-

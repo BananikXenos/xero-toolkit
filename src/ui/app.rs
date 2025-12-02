@@ -1,8 +1,10 @@
-//! Application setup and initialization functionality.
+//! Application setup and initialization.
 
 use crate::config;
-use crate::core::{AppContext, UiComponents};
-use crate::ui::{pages, tabs};
+use crate::core;
+use crate::ui::context::AppContext;
+use crate::ui::context::UiComponents;
+use crate::ui::{navigation, pages};
 use adw::prelude::*;
 use adw::Application;
 use gtk4::glib;
@@ -21,12 +23,14 @@ pub fn setup_application_ui(app: &Application) {
     window.present();
 
     info!("Checking system dependencies");
-    if !crate::core::check_system_requirements(&window) {
+    if !core::check_system_requirements(&window) {
         warn!("Dependency check failed - application will not continue");
         return;
     }
-    if let Some(helper) = crate::utils::detect_aur_helper() {
-        crate::set_aur_helper(helper);
+
+    // Initialize AUR helper after dependency checks pass
+    if core::aur::init() {
+        info!("AUR helper initialized successfully");
     }
     info!("Dependency check passed");
 
@@ -35,8 +39,7 @@ pub fn setup_application_ui(app: &Application) {
 
     let ctx = setup_ui_components(&builder);
 
-    // Setup UI components by category
-    tabs::setup_tabs(&ctx.ui);
+    navigation::setup(&ctx.ui);
 
     info!("Setting initial view to main page");
     ctx.navigate_to_page("main_page");
@@ -107,7 +110,7 @@ fn setup_ui_components(builder: &Builder) -> AppContext {
     AppContext::new(ui)
 }
 
-/// Load page content from separate UI files into page containers
+/// Load page content from separate UI files into page containers.
 fn load_page_contents(main_builder: &Builder) {
     let pages = [
         (
@@ -157,7 +160,6 @@ fn load_page_contents(main_builder: &Builder) {
             Ok(_) => info!("Successfully loaded {} page", page_name),
             Err(e) => {
                 warn!("Failed to load {} page: {}", page_name, e);
-                // Create a fallback label for the page
                 if let Some(container) = main_builder.object::<GtkBox>(container_id) {
                     let fallback_label = gtk4::Label::builder()
                         .label(format!("{} page content not available", page_name))
@@ -169,27 +171,28 @@ fn load_page_contents(main_builder: &Builder) {
     }
 }
 
-/// Load a single page from a UI resource file
+/// Load a single page from a UI resource file.
 fn load_page_from_resource(
     main_builder: &Builder,
     page_name: &str,
     resource_path: &str,
     container_id: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> anyhow::Result<()> {
     let page_builder = Builder::from_resource(resource_path);
 
     let page_widget: gtk4::Widget = page_builder
         .object(format!("page_{}", page_name))
         .ok_or_else(|| {
-            format!(
+            anyhow::anyhow!(
                 "Could not find page_{} widget in {}",
-                page_name, resource_path
+                page_name,
+                resource_path
             )
         })?;
 
     let container: GtkBox = main_builder
         .object(container_id)
-        .ok_or_else(|| format!("Could not find container {} in main UI", container_id))?;
+        .ok_or_else(|| anyhow::anyhow!("Could not find container {} in main UI", container_id))?;
 
     container.append(&page_widget);
 

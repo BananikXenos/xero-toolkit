@@ -1,60 +1,57 @@
 //! Drivers and hardware tools page button handlers.
 //!
 //! Handles:
-//! - NVIDIA GPU drivers (closed and open source) via selection dialog
+//! - NVIDIA GPU drivers (closed and open source)
 //! - Tailscale VPN
 //! - ASUS ROG laptop tools
 
-use crate::ui::command_execution as progress_dialog;
-use crate::ui::dialogs::show_error;
-use crate::ui::selection_dialog;
+use crate::ui::dialogs::error::show_error;
+use crate::ui::dialogs::selection::{
+    show_selection_dialog, SelectionDialogConfig, SelectionOption,
+};
+use crate::ui::task_runner::{self, Command};
 use gtk4::prelude::*;
-use gtk4::{ApplicationWindow, Builder};
+use gtk4::{ApplicationWindow, Builder, Button};
 use log::{info, warn};
 
-/// Set up all button handlers for the drivers page
+/// Set up all button handlers for the drivers page.
 pub fn setup_handlers(page_builder: &Builder, _main_builder: &Builder) {
     setup_gpu_drivers(page_builder);
     setup_tailscale(page_builder);
     setup_asus_rog(page_builder);
 }
 
-fn setup_gpu_drivers(page_builder: &Builder) {
-    if let Some(btn_gpu_drivers) = page_builder.object::<gtk4::Button>("btn_gpu_drivers") {
-        btn_gpu_drivers.connect_clicked(move |button| {
-            info!("Drivers: GPU Drivers button clicked");
+fn setup_gpu_drivers(builder: &Builder) {
+    let Some(button) = builder.object::<Button>("btn_gpu_drivers") else {
+        return;
+    };
 
-            show_gpu_driver_selection(button);
-        });
-    }
-}
+    button.connect_clicked(move |btn| {
+        info!("GPU Drivers button clicked");
 
-fn show_gpu_driver_selection(button: &gtk4::Button) {
-    let widget = button.clone().upcast::<gtk4::Widget>();
-    let window = widget
-        .root()
-        .and_then(|root| root.downcast::<ApplicationWindow>().ok());
+        let Some(window) = get_window(btn) else {
+            return;
+        };
 
-    if let Some(window) = window {
-        let window_ref = window.upcast_ref::<gtk4::Window>();
+        let window_clone = window.clone();
 
-        let config = selection_dialog::SelectionDialogConfig::new(
+        let config = SelectionDialogConfig::new(
             "NVIDIA Driver Selection",
             "Select which NVIDIA driver version to install.",
         )
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "nvidia_closed",
             "NVIDIA Closed Source",
             "Proprietary NVIDIA drivers",
             false,
         ))
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "nvidia_open",
             "NVIDIA Open Source",
             "Open source NVIDIA drivers (Turing+ GPUs)",
             false,
         ))
-        .add_option(selection_dialog::SelectionOption::new(
+        .add_option(SelectionOption::new(
             "cuda",
             "CUDA Toolkit",
             "NVIDIA CUDA Toolkit for GPU-accelerated computing",
@@ -62,165 +59,173 @@ fn show_gpu_driver_selection(button: &gtk4::Button) {
         ))
         .confirm_label("Install");
 
-        let window_clone = window.clone();
-        selection_dialog::show_selection_dialog(window_ref, config, move |selected_ids| {
-            // Check if both drivers are selected (conflict)
-            if selected_ids.contains(&"nvidia_closed".to_string())
-                && selected_ids.contains(&"nvidia_open".to_string())
+        show_selection_dialog(window.upcast_ref(), config, move |selected| {
+            // Check for driver conflict
+            if selected.contains(&"nvidia_closed".to_string())
+                && selected.contains(&"nvidia_open".to_string())
             {
                 warn!("Both NVIDIA drivers selected - conflict");
-                show_error(&window_clone, "Cannot install both closed and open source NVIDIA drivers.\nPlease select only one.");
+                show_error(
+                    &window_clone,
+                    "Cannot install both closed and open source NVIDIA drivers.\nPlease select only one.",
+                );
                 return;
             }
 
-            let mut commands = vec![];
-
-            if selected_ids.contains(&"nvidia_closed".to_string()) {
-                commands.push(progress_dialog::CommandStep::aur(
-                    &[
-                        "-S",
-                        "--needed",
-                        "--noconfirm",
-                        "libvdpau",
-                        "egl-wayland",
-                        "nvidia-dkms",
-                        "nvidia-utils",
-                        "opencl-nvidia",
-                        "libvdpau-va-gl",
-                        "nvidia-settings",
-                        "vulkan-icd-loader",
-                        "lib32-nvidia-utils",
-                        "lib32-opencl-nvidia",
-                        "linux-firmware-nvidia",
-                        "lib32-vulkan-icd-loader",
-                    ],
-                    "Installing NVIDIA proprietary drivers...",
-                ));
-            }
-
-            if selected_ids.contains(&"nvidia_open".to_string()) {
-                commands.push(progress_dialog::CommandStep::aur(
-                    &[
-                        "-S",
-                        "--needed",
-                        "--noconfirm",
-                        "libvdpau",
-                        "egl-wayland",
-                        "nvidia-utils",
-                        "opencl-nvidia",
-                        "libvdpau-va-gl",
-                        "nvidia-settings",
-                        "nvidia-open-dkms",
-                        "vulkan-icd-loader",
-                        "lib32-nvidia-utils",
-                        "lib32-opencl-nvidia",
-                        "linux-firmware-nvidia",
-                        "lib32-vulkan-icd-loader",
-                    ],
-                    "Installing NVIDIA open source drivers...",
-                ));
-            }
-
-            if selected_ids.contains(&"cuda".to_string()) {
-                commands.push(progress_dialog::CommandStep::aur(
-                    &["-S", "--needed", "--noconfirm", "cuda", "cudnn"],
-                    "Installing CUDA Toolkit...",
-                ));
-            }
-
-            // Run NVIDIA post-install configuration script only if a driver was selected
-            let driver_selected = selected_ids.contains(&"nvidia_closed".to_string())
-                || selected_ids.contains(&"nvidia_open".to_string());
-
-            if driver_selected {
-                commands.push(progress_dialog::CommandStep::privileged(
-                    "bash",
-                    &["/opt/xero-toolkit/scripts/nv-setup.sh"],
-                    "Configuring NVIDIA drivers...",
-                ));
-            }
+            let commands = build_gpu_driver_commands(&selected);
 
             if !commands.is_empty() {
-                let window_ref = window_clone.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
+                task_runner::run(
+                    window_clone.upcast_ref(),
                     commands,
                     "GPU Driver Installation",
                     None,
                 );
             }
         });
-    }
+    });
 }
 
-fn setup_tailscale(page_builder: &Builder) {
-    if let Some(btn_tailscale) = page_builder.object::<gtk4::Button>("btn_tailscale") {
-        btn_tailscale.connect_clicked(move |button| {
-            info!("Drivers: Tailscale VPN button clicked");
+/// Build commands for selected GPU drivers.
+fn build_gpu_driver_commands(selected: &[String]) -> Vec<Command> {
+    let mut commands = Vec::new();
 
-
-            let widget = button.clone().upcast::<gtk4::Widget>();
-            let window = widget
-                .root()
-                .and_then(|root| root.downcast::<ApplicationWindow>().ok());
-
-            if let Some(window) = window {
-                let commands = vec![progress_dialog::CommandStep::privileged(
-                    "bash",
-                    &["-c", "curl -fsSL https://raw.githubusercontent.com/xerolinux/xero-fixes/main/conf/install.sh | bash"],
-                    "Installing Tailscale VPN...",
-                )];
-
-                let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "Install Tailscale VPN",
-                    None,
-                );
-            }
-        });
+    if selected.contains(&"nvidia_closed".to_string()) {
+        commands.push(Command::aur(
+            &[
+                "-S",
+                "--needed",
+                "--noconfirm",
+                "libvdpau",
+                "egl-wayland",
+                "nvidia-dkms",
+                "nvidia-utils",
+                "opencl-nvidia",
+                "libvdpau-va-gl",
+                "nvidia-settings",
+                "vulkan-icd-loader",
+                "lib32-nvidia-utils",
+                "lib32-opencl-nvidia",
+                "linux-firmware-nvidia",
+                "lib32-vulkan-icd-loader",
+            ],
+            "Installing NVIDIA proprietary drivers...",
+        ));
     }
+
+    if selected.contains(&"nvidia_open".to_string()) {
+        commands.push(Command::aur(
+            &[
+                "-S",
+                "--needed",
+                "--noconfirm",
+                "libvdpau",
+                "egl-wayland",
+                "nvidia-utils",
+                "opencl-nvidia",
+                "libvdpau-va-gl",
+                "nvidia-settings",
+                "nvidia-open-dkms",
+                "vulkan-icd-loader",
+                "lib32-nvidia-utils",
+                "lib32-opencl-nvidia",
+                "linux-firmware-nvidia",
+                "lib32-vulkan-icd-loader",
+            ],
+            "Installing NVIDIA open source drivers...",
+        ));
+    }
+
+    if selected.contains(&"cuda".to_string()) {
+        commands.push(Command::aur(
+            &["-S", "--needed", "--noconfirm", "cuda", "cudnn"],
+            "Installing CUDA Toolkit...",
+        ));
+    }
+
+    // Run NVIDIA post-install configuration if a driver was selected
+    let driver_selected = selected.contains(&"nvidia_closed".to_string())
+        || selected.contains(&"nvidia_open".to_string());
+
+    if driver_selected {
+        commands.push(Command::privileged(
+            "bash",
+            &["/opt/xero-toolkit/scripts/nv-setup.sh"],
+            "Configuring NVIDIA drivers...",
+        ));
+    }
+
+    commands
 }
 
-fn setup_asus_rog(page_builder: &Builder) {
-    if let Some(btn_asus_rog) = page_builder.object::<gtk4::Button>("btn_asus_rog") {
-        btn_asus_rog.connect_clicked(move |button| {
-            info!("Drivers: ASUS ROG Tools button clicked");
+fn setup_tailscale(builder: &Builder) {
+    let Some(button) = builder.object::<Button>("btn_tailscale") else {
+        return;
+    };
 
-            let widget = button.clone().upcast::<gtk4::Widget>();
-            let window = widget
-                .root()
-                .and_then(|root| root.downcast::<ApplicationWindow>().ok());
+    button.connect_clicked(move |btn| {
+        info!("Tailscale VPN button clicked");
 
-            if let Some(window) = window {
-                let commands = vec![
-                    progress_dialog::CommandStep::aur(
-                        &[
-                            "-S",
-                            "--noconfirm",
-                            "--needed",
-                            "rog-control-center",
-                            "asusctl",
-                            "supergfxctl",
-                        ],
-                        "Installing ASUS ROG control tools...",
-                    ),
-                    progress_dialog::CommandStep::privileged(
-                        "systemctl",
-                        &["enable", "--now", "asusd", "supergfxd"],
-                        "Enabling ASUS ROG services...",
-                    ),
-                ];
+        let Some(window) = get_window(btn) else {
+            return;
+        };
 
-                let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "Install ASUS ROG Tools",
-                    None,
-                );
-            }
-        });
-    }
+        let commands = vec![Command::privileged(
+            "bash",
+            &[
+                "-c",
+                "curl -fsSL https://raw.githubusercontent.com/xerolinux/xero-fixes/main/conf/install.sh | bash",
+            ],
+            "Installing Tailscale VPN...",
+        )];
+
+        task_runner::run(window.upcast_ref(), commands, "Install Tailscale VPN", None);
+    });
+}
+
+fn setup_asus_rog(builder: &Builder) {
+    let Some(button) = builder.object::<Button>("btn_asus_rog") else {
+        return;
+    };
+
+    button.connect_clicked(move |btn| {
+        info!("ASUS ROG Tools button clicked");
+
+        let Some(window) = get_window(btn) else {
+            return;
+        };
+
+        let commands = vec![
+            Command::aur(
+                &[
+                    "-S",
+                    "--noconfirm",
+                    "--needed",
+                    "rog-control-center",
+                    "asusctl",
+                    "supergfxctl",
+                ],
+                "Installing ASUS ROG control tools...",
+            ),
+            Command::privileged(
+                "systemctl",
+                &["enable", "--now", "asusd", "supergfxd"],
+                "Enabling ASUS ROG services...",
+            ),
+        ];
+
+        task_runner::run(
+            window.upcast_ref(),
+            commands,
+            "Install ASUS ROG Tools",
+            None,
+        );
+    });
+}
+
+/// Helper to get the parent window from a button.
+fn get_window(button: &Button) -> Option<ApplicationWindow> {
+    button
+        .root()
+        .and_then(|root| root.downcast::<ApplicationWindow>().ok())
 }

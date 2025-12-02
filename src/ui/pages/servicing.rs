@@ -12,9 +12,11 @@
 //! - Parallel downloads adjustment
 
 use crate::core;
-use crate::ui::command_execution as progress_dialog;
-use crate::ui::dialogs::show_error;
-use crate::ui::selection_dialog;
+use crate::ui::dialogs::error::show_error;
+use crate::ui::dialogs::selection::{
+    show_selection_dialog, SelectionDialogConfig, SelectionOption,
+};
+use crate::ui::task_runner::{self, Command};
 use gtk4::prelude::*;
 use gtk4::{ApplicationWindow, Builder};
 use log::info;
@@ -36,7 +38,7 @@ fn setup_clr_pacman(page_builder: &Builder) {
     if let Some(btn_clr_pacman) = page_builder.object::<gtk4::Button>("btn_clr_pacman") {
         btn_clr_pacman.connect_clicked(move |button| {
             info!("Servicing: Clear Pacman Cache button clicked");
-            let commands = vec![progress_dialog::CommandStep::privileged(
+            let commands = vec![Command::privileged(
                 "pacman",
                 &["-Scc"],
                 "Clearing Pacman cache (full clean)...",
@@ -47,12 +49,7 @@ fn setup_clr_pacman(page_builder: &Builder) {
                 .and_then(|r| r.downcast::<ApplicationWindow>().ok())
             {
                 let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "Clear Pacman Cache",
-                    None,
-                );
+                task_runner::run(window_ref, commands, "Clear Pacman Cache", None);
             }
         });
     }
@@ -62,7 +59,7 @@ fn setup_unlock_pacman(page_builder: &Builder) {
     if let Some(btn_unlock_pacman) = page_builder.object::<gtk4::Button>("btn_unlock_pacman") {
         btn_unlock_pacman.connect_clicked(move |button| {
             info!("Servicing: Unlock Pacman DB button clicked");
-            let commands = vec![progress_dialog::CommandStep::privileged(
+            let commands = vec![Command::privileged(
                 "rm",
                 &["-f", "/var/lib/pacman/db.lck"],
                 "Removing Pacman lock file...",
@@ -73,12 +70,7 @@ fn setup_unlock_pacman(page_builder: &Builder) {
                 .and_then(|r| r.downcast::<ApplicationWindow>().ok())
             {
                 let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "Unlock Pacman Database",
-                    None,
-                );
+                task_runner::run(window_ref, commands, "Unlock Pacman Database", None);
             }
         });
     }
@@ -88,7 +80,7 @@ fn setup_plasma_x11(page_builder: &Builder) {
     if let Some(btn_plasma_x11) = page_builder.object::<gtk4::Button>("btn_plasma_x11") {
         btn_plasma_x11.connect_clicked(move |button| {
             info!("Servicing: Plasma X11 Session button clicked");
-            let commands = vec![progress_dialog::CommandStep::aur(
+            let commands = vec![Command::aur(
                 &["-S", "--noconfirm", "kwin-x11", "plasma-x11-session"],
                 "Installing KDE Plasma X11 session components...",
             )];
@@ -98,12 +90,7 @@ fn setup_plasma_x11(page_builder: &Builder) {
                 .and_then(|r| r.downcast::<ApplicationWindow>().ok())
             {
                 let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "Install KDE X11 Session",
-                    None,
-                );
+                task_runner::run(window_ref, commands, "Install KDE X11 Session", None);
             }
         });
     }
@@ -114,16 +101,16 @@ fn setup_vm_guest_utils(page_builder: &Builder) {
         btn_vm_guest_utils.connect_clicked(move |button| {
             info!("Servicing: VM Guest Utils button clicked");
             let output = std::process::Command::new("systemd-detect-virt").output();
-            let mut commands: Vec<progress_dialog::CommandStep> = vec![];
+            let mut commands: Vec<Command> = vec![];
             match output {
                 Ok(result) if result.status.success() => {
                     let virt = String::from_utf8_lossy(&result.stdout).trim().to_string();
                     match virt.as_str() {
-                        "oracle" => commands.push(progress_dialog::CommandStep::aur(
+                        "oracle" => commands.push(Command::aur(
                             &["-S", "--needed", "--noconfirm", "virtualbox-guest-utils"],
                             "Installing VirtualBox guest utilities...",
                         )),
-                        "kvm" => commands.push(progress_dialog::CommandStep::aur(
+                        "kvm" => commands.push(Command::aur(
                             &[
                                 "-S",
                                 "--needed",
@@ -164,12 +151,7 @@ fn setup_vm_guest_utils(page_builder: &Builder) {
                     .and_then(|r| r.downcast::<ApplicationWindow>().ok())
                 {
                     let window_ref = window.upcast_ref::<gtk4::Window>();
-                    progress_dialog::run_commands_with_progress(
-                        window_ref,
-                        commands,
-                        "Install VM Guest Utilities",
-                        None,
-                    );
+                    task_runner::run(window_ref, commands, "Install VM Guest Utilities", None);
                 }
             }
         });
@@ -192,16 +174,12 @@ fn setup_fix_gpgme(page_builder: &Builder) {
         btn_fix_gpgme.connect_clicked(move |button| {
             info!("Servicing: Fix GPGME Database button clicked");
             let commands = vec![
-                progress_dialog::CommandStep::privileged(
+                Command::privileged(
                     "rm",
                     &["-rf", "/var/lib/pacman/sync"],
                     "Removing sync database...",
                 ),
-                progress_dialog::CommandStep::privileged(
-                    "pacman",
-                    &["-Syy"],
-                    "Refreshing package databases...",
-                ),
+                Command::privileged("pacman", &["-Syy"], "Refreshing package databases..."),
             ];
             let widget = button.clone().upcast::<gtk4::Widget>();
             if let Some(window) = widget
@@ -209,12 +187,7 @@ fn setup_fix_gpgme(page_builder: &Builder) {
                 .and_then(|r| r.downcast::<ApplicationWindow>().ok())
             {
                 let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "Fix GPGME Database Issue",
-                    None,
-                );
+                task_runner::run(window_ref, commands, "Fix GPGME Database Issue", None);
             }
         });
     }
@@ -225,27 +198,27 @@ fn setup_fix_arch_keyring(page_builder: &Builder) {
     {
         btn_fix_arch_keyring.connect_clicked(move |button| {
             info!("Servicing: Fix Arch Keyring button clicked");            let commands = vec![
-                progress_dialog::CommandStep::privileged(
+                Command::privileged(
                     "rm",
                     &["-rf", "/etc/pacman.d/gnupg"],
                     "Removing existing GnuPG keyring...",
                 ),
-                progress_dialog::CommandStep::privileged(
+                Command::privileged(
                     "pacman-key",
                     &["--init"],
                     "Initializing new keyring...",
                 ),
-                progress_dialog::CommandStep::privileged(
+                Command::privileged(
                     "pacman-key",
                     &["--populate"],
                     "Populating keyring...",
                 ),
-                progress_dialog::CommandStep::privileged(
+                Command::privileged(
                     "sh",
                     &["-c", "echo 'keyserver hkp://keyserver.ubuntu.com:80' >> /etc/pacman.d/gnupg/gpg.conf"],
                     "Setting keyserver...",
                 ),
-                progress_dialog::CommandStep::privileged(
+                Command::privileged(
                     "pacman",
                     &["-Syy", "--noconfirm", "archlinux-keyring"],
                     "Reinstalling Arch Linux keyring...",
@@ -257,7 +230,7 @@ fn setup_fix_arch_keyring(page_builder: &Builder) {
                 .and_then(|r| r.downcast::<ApplicationWindow>().ok())
             {
                 let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
+                task_runner::run(
                     window_ref,
                     commands,
                     "Fix GnuPG Keyring",
@@ -280,11 +253,11 @@ fn setup_update_mirrorlist(page_builder: &Builder) {
                 let window_ref = window.upcast_ref::<gtk4::Window>();
 
                 let rate_mirrors_installed = core::is_package_installed("rate-mirrors");
-                let config = selection_dialog::SelectionDialogConfig::new(
+                let config = SelectionDialogConfig::new(
                     "Update Mirrorlist",
                     "Select which mirrorlists to update. rate-mirrors will be installed if needed.",
                 )
-                .add_option(selection_dialog::SelectionOption::new(
+                .add_option(SelectionOption::new(
                     "chaotic",
                     "Chaotic-AUR Mirrorlist",
                     "Also update Chaotic-AUR mirrorlist (optional)",
@@ -292,31 +265,31 @@ fn setup_update_mirrorlist(page_builder: &Builder) {
                 ))
                 .confirm_label("Update");
 
-                selection_dialog::show_selection_dialog(window_ref, config, move |selected_ids| {
-                    let mut commands: Vec<progress_dialog::CommandStep> = vec![];
+                show_selection_dialog(window_ref, config, move |selected_ids| {
+                    let mut commands: Vec<Command> = vec![];
 
                     if !rate_mirrors_installed {
-                        commands.push(progress_dialog::CommandStep::aur(
+                        commands.push(Command::aur(
                              &["-S", "--needed", "--noconfirm", "rate-mirrors"],
                              "Installing rate-mirrors utility...",
                          ));
                     }
 
-                    commands.push(progress_dialog::CommandStep::privileged(
+                    commands.push(Command::privileged(
                         "sh",
                         &["-c", "rate-mirrors --allow-root --protocol https arch | tee /etc/pacman.d/mirrorlist"],
                         "Updating Arch mirrorlist...",
                     ));
 
                     if selected_ids.contains(&"chaotic".to_string()) {
-                        commands.push(progress_dialog::CommandStep::privileged(
+                        commands.push(Command::privileged(
                             "sh",
                             &["-c", "rate-mirrors --allow-root --protocol https chaotic-aur | tee /etc/pacman.d/chaotic-mirrorlist"],
                             "Updating Chaotic-AUR mirrorlist...",
                         ));
                     }
 
-                    commands.push(progress_dialog::CommandStep::privileged(
+                    commands.push(Command::privileged(
                         "pacman",
                         &["-Syy"],
                         "Refreshing package databases...",
@@ -324,7 +297,7 @@ fn setup_update_mirrorlist(page_builder: &Builder) {
 
                     if !commands.is_empty() {
                         let window_ref2 = window_clone.upcast_ref::<gtk4::Window>();
-                        progress_dialog::run_commands_with_progress(window_ref2, commands, "Update System Mirrorlist", None);
+                        task_runner::run(window_ref2, commands, "Update System Mirrorlist", None);
                     }
                 });
             }
@@ -338,7 +311,7 @@ fn setup_parallel_downloads(page_builder: &Builder) {
     {
         btn_parallel_downloads.connect_clicked(move |button| {
             info!("Servicing: Change Parallel Downloads button clicked");
-            let commands = vec![progress_dialog::CommandStep::privileged(
+            let commands = vec![Command::privileged(
                 "pmpd",
                 &[],
                 "Adjusting parallel downloads setting...",
@@ -349,12 +322,7 @@ fn setup_parallel_downloads(page_builder: &Builder) {
                 .and_then(|r| r.downcast::<ApplicationWindow>().ok())
             {
                 let window_ref = window.upcast_ref::<gtk4::Window>();
-                progress_dialog::run_commands_with_progress(
-                    window_ref,
-                    commands,
-                    "Change Parallel Downloads",
-                    None,
-                );
+                task_runner::run(window_ref, commands, "Change Parallel Downloads", None);
             }
         });
     }
