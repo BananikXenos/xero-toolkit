@@ -36,7 +36,7 @@ pub fn setup_application_ui(app: &Application) {
     let ctx = setup_ui_components(&builder);
 
     // Setup UI components by category
-    tabs::setup_tabs(ctx.ui.tabs_container(), ctx.ui.stack());
+    tabs::setup_tabs(&ctx.ui);
 
     info!("Setting initial view to main page");
     ctx.navigate_to_page("main_page");

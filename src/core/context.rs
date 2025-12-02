@@ -41,24 +41,13 @@ impl UiComponents {
     /// Configure the sidebar paned widget with size constraints.
     pub fn configure_sidebar(&self, min_width: i32, max_width: i32) {
         use gtk4::prelude::*;
-        use log::debug;
 
         self.main_paned.set_wide_handle(true);
+        self.main_paned.set_shrink_start_child(false);
+        self.main_paned.set_resize_start_child(false);
 
-        self.main_paned
-            .connect_notify_local(Some("position"), move |paned, _| {
-                let position = paned.position();
-
-                if position < min_width {
-                    paned.set_position(min_width);
-                    debug!("Sidebar resize limited to minimum width: {}", min_width);
-                } else if position > max_width {
-                    paned.set_position(max_width);
-                    debug!("Sidebar resize limited to maximum width: {}", max_width);
-                } else {
-                    debug!("Sidebar resized to width: {}", position);
-                }
-            });
+        // Enforce min width
+        self.tabs_container.set_size_request(min_width, -1);
 
         // Set initial position within bounds
         let position = self.main_paned.position();
@@ -67,6 +56,18 @@ impl UiComponents {
         } else if position > max_width {
             self.main_paned.set_position(max_width);
         }
+
+        // Add signal handler for constraints
+        self.main_paned
+            .connect_notify_local(Some("position"), move |paned, _| {
+                let pos = paned.position();
+
+                if pos < min_width {
+                    paned.set_position(min_width);
+                } else if pos > max_width {
+                    paned.set_position(max_width);
+                }
+            });
     }
 
     /// Get the tabs container for tab management.

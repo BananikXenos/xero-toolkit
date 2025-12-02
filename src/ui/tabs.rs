@@ -3,6 +3,7 @@
 //! This module handles the creation and management of vertical tabs in the left sidebar,
 //! allowing users to switch between different pages in the application stack.
 
+use crate::core::UiComponents;
 use gtk4::prelude::*;
 use gtk4::{Box, Button, Image, Label, Orientation, Stack};
 use log::info;
@@ -71,8 +72,11 @@ impl Tab {
 ///
 /// This function creates a set of tabs and adds them to the tabs container.
 /// Each tab is connected to navigate to its corresponding stack page.
-pub fn setup_tabs(tabs_container: &Box, stack: &Stack) {
+pub fn setup_tabs(ui: &UiComponents) {
     info!("Setting up navigation tabs");
+
+    let tabs_container = ui.tabs_container();
+    let stack = ui.stack();
 
     // Define the tabs to display
     // These correspond to stack page names defined in main.ui
