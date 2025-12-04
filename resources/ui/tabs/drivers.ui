@@ -4,7 +4,7 @@
 
     <object class="GtkBox" id="page_drivers">
         <property name="orientation">vertical</property>
-        <property name="spacing">24</property>
+        <property name="spacing">0</property>
         <property name="margin-top">48</property>
         <property name="margin-bottom">48</property>
         <property name="margin-start">48</property>
@@ -14,12 +14,14 @@
         <property name="halign">fill</property>
         <property name="valign">fill</property>
 
-        <!-- Header Section -->
+        <!-- Top Section: Header (pinned at top) -->
         <child>
             <object class="GtkBox">
                 <property name="orientation">vertical</property>
                 <property name="spacing">16</property>
                 <property name="halign">center</property>
+                <property name="valign">start</property>
+                <property name="vexpand">false</property>
 
                 <child>
                     <object class="GtkImage">
@@ -31,9 +33,7 @@
 
                 <child>
                     <object class="GtkLabel">
-                        <property
-                            name="label"
-                        >Drivers &amp; Hardware Tools</property>
+                        <property name="label">Drivers &amp; Hardware Tools</property>
                         <property name="css-classes">title-1</property>
                         <property name="halign">center</property>
                     </object>
@@ -41,9 +41,7 @@
 
                 <child>
                     <object class="GtkLabel">
-                        <property
-                            name="label"
-                        >Install and configure drivers and hardware-specific tools</property>
+                        <property name="label">Install and configure drivers and hardware-specific tools</property>
                         <property name="css-classes">dim</property>
                         <property name="halign">center</property>
                         <property name="wrap">true</property>
@@ -53,29 +51,27 @@
             </object>
         </child>
 
-        <!-- Buttons Layout -->
+        <!-- Bottom Section: Buttons Layout (centered in remaining space) -->
         <child>
             <object class="GtkBox">
                 <property name="orientation">vertical</property>
                 <property name="spacing">16</property>
                 <property name="halign">center</property>
                 <property name="valign">center</property>
-                <property name="vexpand">false</property>
+                <property name="vexpand">true</property>
+                <property name="margin-top">32</property>
 
-                <!-- Row 1: GPU Drivers, Tailscale, ASUS ROG -->
+                <!-- Row 1: GPU Drivers -->
                 <child>
                     <object class="GtkBox">
                         <property name="orientation">horizontal</property>
-                        <property name="spacing">16</property>
                         <property name="halign">center</property>
 
                         <child>
                             <object class="GtkButton" id="btn_gpu_drivers">
                                 <property name="width-request">200</property>
                                 <property name="height-request">50</property>
-                                <property
-                                    name="css-classes"
-                                >suggested-action pill</property>
+                                <property name="css-classes">suggested-action pill</property>
                                 <child>
                                     <object class="GtkBox">
                                         <property name="orientation">horizontal</property>
@@ -96,15 +92,22 @@
                                 </child>
                             </object>
                         </child>
+                    </object>
+                </child>
+
+                <!-- Row 2: Tailscale, ASUS ROG -->
+                <child>
+                    <object class="GtkBox">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">16</property>
+                        <property name="halign">center</property>
 
                         <child>
                             <object class="GtkButton" id="btn_tailscale">
                                 <property name="label">Tailscale VPN</property>
                                 <property name="width-request">200</property>
                                 <property name="height-request">50</property>
-                                <property
-                                    name="css-classes"
-                                >suggested-action pill</property>
+                                <property name="css-classes">suggested-action pill</property>
                             </object>
                         </child>
 
@@ -113,9 +116,7 @@
                                 <property name="label">ASUS ROG Tools</property>
                                 <property name="width-request">200</property>
                                 <property name="height-request">50</property>
-                                <property
-                                    name="css-classes"
-                                >suggested-action pill</property>
+                                <property name="css-classes">suggested-action pill</property>
                             </object>
                         </child>
                     </object>

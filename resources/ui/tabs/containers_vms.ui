@@ -4,7 +4,7 @@
 
     <object class="GtkBox" id="page_containers_vms">
         <property name="orientation">vertical</property>
-        <property name="spacing">24</property>
+         <property name="spacing">0</property>
         <property name="margin-top">48</property>
         <property name="margin-bottom">48</property>
         <property name="margin-start">48</property>
@@ -14,12 +14,14 @@
         <property name="halign">fill</property>
         <property name="valign">fill</property>
 
-        <!-- Header Section -->
+        <!-- Top Section: Header (pinned at top) -->
         <child>
             <object class="GtkBox">
                 <property name="orientation">vertical</property>
                 <property name="spacing">16</property>
                 <property name="halign">center</property>
+                <property name="valign">start</property>
+                <property name="vexpand">false</property>
 
                 <child>
                     <object class="GtkImage">
@@ -39,10 +41,7 @@
 
                 <child>
                     <object class="GtkLabel">
-                        <property
-                            name="label"
-                        >Manage containers and virtual machines
-                        </property>
+                        <property name="label">Manage containers and virtual machines</property>
                         <property name="css-classes">dim</property>
                         <property name="halign">center</property>
                         <property name="wrap">true</property>
@@ -52,14 +51,15 @@
             </object>
         </child>
 
-        <!-- Buttons Layout -->
+        <!-- Bottom Section: Buttons Layout (centered in remaining space) -->
         <child>
             <object class="GtkBox">
                 <property name="orientation">vertical</property>
                 <property name="spacing">16</property>
                 <property name="halign">center</property>
                 <property name="valign">center</property>
-                <property name="vexpand">false</property>
+                <property name="vexpand">true</property>
+                <property name="margin-top">32</property>
 
                 <!-- Row 1: Docker -->
                 <child>
