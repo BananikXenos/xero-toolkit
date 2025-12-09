@@ -23,15 +23,9 @@ pub fn show_download_dialog(parent: &Window) {
     let window: adw::Window = builder
         .object("download_setup_window")
         .expect("Failed to get download_setup_window");
-    let month_entry: Entry = builder
-        .object("month_entry")
-        .expect("Failed to get month_entry");
-    let day_entry: Entry = builder
-        .object("day_entry")
-        .expect("Failed to get day_entry");
-    let year_entry: Entry = builder
-        .object("year_entry")
-        .expect("Failed to get year_entry");
+    let version_label: Label = builder
+        .object("version_label")
+        .expect("Failed to get version_label");
     let download_path_entry: Entry = builder
         .object("download_path_entry")
         .expect("Failed to get download_path_entry");
@@ -47,9 +41,6 @@ pub fn show_download_dialog(parent: &Window) {
     let fetching_spinner: Image = builder
         .object("fetching_spinner")
         .expect("Failed to get fetching_spinner");
-    let fetching_label: Label = builder
-        .object("fetching_label")
-        .expect("Failed to get fetching_label");
 
     window.set_transient_for(Some(parent));
 
@@ -69,17 +60,13 @@ pub fn show_download_dialog(parent: &Window) {
     let (tx, rx) = std::sync::mpsc::channel::<Result<(String, String), String>>();
 
     // Clone for the receiver
-    let month_entry_clone = month_entry.clone();
-    let day_entry_clone = day_entry.clone();
-    let year_entry_clone = year_entry.clone();
+    let version_label_clone = version_label.clone();
     let browse_button_clone = browse_button.clone();
     let start_download_button_clone = start_download_button.clone();
     let download_path_entry_clone = download_path_entry.clone();
     let iso_info_clone = iso_info.clone();
     let selected_path_clone = selected_path.clone();
-
     let fetching_spinner_clone = fetching_spinner.clone();
-    let fetching_label_clone = fetching_label.clone();
 
     // Poll for ISO info result
     glib::timeout_add_local(std::time::Duration::from_millis(50), move || {
@@ -89,22 +76,19 @@ pub fn show_download_dialog(parent: &Window) {
                     Ok((iso_name, download_url)) => {
                         info!("Fetched ISO info: {}", iso_name);
 
-                        // Parse date from filename (archlinux-YYYY.MM.DD-x86_64.iso)
-                        if let Some(date_part) = iso_name
+                        // Parse version from filename (archlinux-YYYY.MM.DD-x86_64.iso)
+                        let version = if let Some(date_part) = iso_name
                             .strip_prefix("archlinux-")
                             .and_then(|s| s.split('-').next())
                         {
-                            if let Some((year, month, day)) = parse_date_parts(date_part) {
-                                let month_name = get_month_name(month);
-                                month_entry_clone.set_text(month_name);
-                                day_entry_clone.set_text(&day.to_string());
-                                year_entry_clone.set_text(&year.to_string());
-                            } else {
-                                month_entry_clone.set_text("Unknown");
-                                day_entry_clone.set_text("--");
-                                year_entry_clone.set_text("----");
-                            }
-                        }
+                            format!("Version: {}", date_part)
+                        } else {
+                            "Latest Version".to_string()
+                        };
+                        version_label_clone.set_text(&version);
+
+                        // Hide fetching spinner
+                        fetching_spinner_clone.set_visible(false);
 
                         // Store ISO info
                         *iso_info_clone.lock().unwrap() = Some((iso_name.clone(), download_url));
@@ -123,20 +107,16 @@ pub fn show_download_dialog(parent: &Window) {
 
                         // Enable start button
                         start_download_button_clone.set_sensitive(true);
-
-                        // Hide fetching indicator
-                        fetching_spinner_clone.set_visible(false);
-                        fetching_label_clone.set_visible(false);
                     }
                     Err(e) => {
                         error!("Failed to fetch ISO info: {}", e);
 
-                        // Show error state in the indicator
+                        // Show error state
                         fetching_spinner_clone.remove_css_class("spinning");
                         fetching_spinner_clone.set_icon_name(Some("circle-xmark"));
-                        fetching_label_clone.set_text("Failed to fetch release info");
-                        fetching_label_clone.remove_css_class("dim-label");
-                        fetching_label_clone.add_css_class("error");
+                        version_label_clone.set_text("Failed to fetch version");
+                        version_label_clone.remove_css_class("accent");
+                        version_label_clone.add_css_class("error");
                     }
                 }
                 glib::ControlFlow::Break
@@ -145,12 +125,12 @@ pub fn show_download_dialog(parent: &Window) {
             Err(std::sync::mpsc::TryRecvError::Disconnected) => {
                 error!("Channel disconnected unexpectedly");
 
-                // Show error state in the indicator
+                // Show error state
                 fetching_spinner_clone.remove_css_class("spinning");
                 fetching_spinner_clone.set_icon_name(Some("circle-xmark"));
-                fetching_label_clone.set_text("Failed to fetch release info");
-                fetching_label_clone.remove_css_class("dim-label");
-                fetching_label_clone.add_css_class("error");
+                version_label_clone.set_text("Failed to fetch version");
+                version_label_clone.remove_css_class("accent");
+                version_label_clone.add_css_class("error");
 
                 glib::ControlFlow::Break
             }
@@ -400,34 +380,3 @@ fn show_error_dialog(parent: &Window, title: &str, message: &str) {
     dialog.present(Some(parent));
 }
 
-/// Parse date parts from ISO filename date string (YYYY.MM.DD)
-fn parse_date_parts(date_str: &str) -> Option<(u32, u32, u32)> {
-    let parts: Vec<&str> = date_str.split('.').collect();
-    if parts.len() == 3 {
-        let year = parts[0].parse::<u32>().ok()?;
-        let month = parts[1].parse::<u32>().ok()?;
-        let day = parts[2].parse::<u32>().ok()?;
-        Some((year, month, day))
-    } else {
-        None
-    }
-}
-
-/// Get month name from month number (1-12)
-fn get_month_name(month: u32) -> &'static str {
-    match month {
-        1 => "January",
-        2 => "February",
-        3 => "March",
-        4 => "April",
-        5 => "May",
-        6 => "June",
-        7 => "July",
-        8 => "August",
-        9 => "September",
-        10 => "October",
-        11 => "November",
-        12 => "December",
-        _ => "Unknown",
-    }
-}
