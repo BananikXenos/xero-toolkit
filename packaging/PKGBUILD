@@ -35,11 +35,6 @@ package() {
   install -Dm755 "target/release/xero-toolkit" \
     "${pkgdir}/opt/xero-toolkit/xero-toolkit"
 
-  # Install scripts
-  install -d "${pkgdir}/opt/xero-toolkit/scripts"
-  install -Dm755 "scripts/nv-setup.sh" \
-    "${pkgdir}/opt/xero-toolkit/scripts/nv-setup.sh"
-
   # Convenience symlink in /usr/bin
   install -d "${pkgdir}/usr/bin"
   ln -s "/opt/xero-toolkit/xero-toolkit" "${pkgdir}/usr/bin/xero-toolkit"

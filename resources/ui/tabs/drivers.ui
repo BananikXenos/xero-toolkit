@@ -61,41 +61,7 @@
                 <property name="vexpand">true</property>
                 <property name="margin-top">32</property>
 
-                <!-- Row 1: GPU Drivers -->
-                <child>
-                    <object class="GtkBox">
-                        <property name="orientation">horizontal</property>
-                        <property name="halign">center</property>
-
-                        <child>
-                            <object class="GtkButton" id="btn_gpu_drivers">
-                                <property name="width-request">200</property>
-                                <property name="height-request">50</property>
-                                <property name="css-classes">suggested-action pill</property>
-                                <child>
-                                    <object class="GtkBox">
-                                        <property name="orientation">horizontal</property>
-                                        <property name="spacing">8</property>
-                                        <property name="halign">center</property>
-                                        <child>
-                                            <object class="GtkImage">
-                                                <property name="icon-name">nvidia-symbolic</property>
-                                                <property name="icon-size">normal</property>
-                                            </object>
-                                        </child>
-                                        <child>
-                                            <object class="GtkLabel">
-                                                <property name="label">NVIDIA Drivers</property>
-                                            </object>
-                                        </child>
-                                    </object>
-                                </child>
-                            </object>
-                        </child>
-                    </object>
-                </child>
-
-                <!-- Row 2: Tailscale, ASUS ROG -->
+                <!-- Row 1: Tailscale, ASUS ROG -->
                 <child>
                     <object class="GtkBox">
                         <property name="orientation">horizontal</property>
