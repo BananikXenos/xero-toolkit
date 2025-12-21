@@ -99,6 +99,7 @@ pub fn show_terminal_dialog(parent: &Window, title: &str, command: &str, args: &
 
     let close_button_clone = close_button.clone();
     let close_button_error = close_button.clone();
+    let terminal_error = terminal.clone();
     terminal.spawn_async(
         vte4::PtyFlags::DEFAULT,
         None,
@@ -111,14 +112,34 @@ pub fn show_terminal_dialog(parent: &Window, title: &str, command: &str, args: &
         move |result| {
             if let Err(e) = result {
                 error!("Failed to spawn terminal command: {}", e);
-                // Enable close button on error so user can exit
+                // Print error message to terminal
+                let error_msg = format!("\r\n[ERROR] Failed to spawn command: {}\r\n", e);
+                terminal_error.feed(error_msg.as_bytes());
+                // Enable close button and make it blue on error
+                close_button_error.add_css_class("suggested-action");
                 close_button_error.set_sensitive(true);
             }
         },
     );
 
-    // Enable close button when child exits
-    terminal.connect_child_exited(move |_, _| {
+    // Enable close button and show exit status when child exits
+    let terminal_exit = terminal.clone();
+    terminal.connect_child_exited(move |_, status| {
+        // Print exit message to terminal with improved formatting
+        let exit_code = status;
+        let status_text = if exit_code == 0 {
+            "success"
+        } else {
+            "error"
+        };
+        let message = format!(
+            "\r\n[Process completed] Command exited with code {} ({})\r\n",
+            exit_code, status_text
+        );
+        terminal_exit.feed(message.as_bytes());
+        
+        // Enable close button and ensure it's blue
+        close_button_clone.add_css_class("suggested-action");
         close_button_clone.set_sensitive(true);
     });
 
