@@ -49,11 +49,10 @@ where
 
     let dialog_clone = dialog.clone();
     let on_confirm_rc = Rc::new(RefCell::new(Some(on_confirm)));
-    let on_confirm_weak = Rc::downgrade(&on_confirm_rc);
     
     continue_button.connect_clicked(move |_| {
         info!("Warning dialog confirmed");
-        if let Some(on_confirm) = on_confirm_weak.upgrade().and_then(|rc| rc.borrow_mut().take()) {
+        if let Some(on_confirm) = on_confirm_rc.borrow_mut().take() {
             on_confirm();
         }
         dialog_clone.close();

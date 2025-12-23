@@ -212,14 +212,48 @@ fn setup_install_nix(builder: &Builder, window: &ApplicationWindow) {
             move || {
                 info!("User confirmed Nix installation after warning");
                 
-                // Use the official Nix installation script as recommended
-                // Reference: https://itsfoss.gitlab.io/post/how-to-install-nix-package-manager-in-linux/
-                terminal::show_terminal_dialog(
-                    window_clone.upcast_ref(),
-                    "Install Nix Package Manager",
-                    "sh",
-                    &["-c", "sh <(curl -L https://nixos.org/install-nix)"],
-                );
+                // Show selection dialog to choose installation type
+                let window_for_selection = window_clone.clone();
+                let config = SelectionDialogConfig::new(
+                    "Nix Installation Type",
+                    "Choose the installation type for Nix Package Manager. Multi-user is recommended for most users.",
+                )
+                .add_option(SelectionOption::new(
+                    "multi-user",
+                    "Multi-user Installation (Recommended)",
+                    "Better build isolation, security, and sharing between users. Requires systemd and sudo.",
+                    false,
+                ))
+                .add_option(SelectionOption::new(
+                    "single-user",
+                    "Single-user Installation",
+                    "Simpler installation owned by your user. Easier to uninstall.",
+                    false,
+                ))
+                .confirm_label("Continue");
+                
+                show_selection_dialog(window_clone.upcast_ref(), config, move |selected| {
+                    if selected.is_empty() {
+                        return;
+                    }
+                    
+                    // Get the selected installation type (should be only one)
+                    let install_type = &selected[0];
+                    let install_command = if install_type == "multi-user" {
+                        info!("Installing Nix with multi-user (daemon) mode");
+                        "sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --daemon"
+                    } else {
+                        info!("Installing Nix with single-user (no-daemon) mode");
+                        "sh <(curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install) --no-daemon"
+                    };
+                    
+                    terminal::show_terminal_dialog(
+                        window_for_selection.upcast_ref(),
+                        "Install Nix Package Manager",
+                        "sh",
+                        &["-c", install_command],
+                    );
+                });
             },
         );
     });
