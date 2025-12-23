@@ -7,6 +7,7 @@
 //! - Plasma wallpapers
 //! - Layan GTK4 patch
 
+use crate::ui::dialogs::terminal;
 use crate::ui::task_runner::{self, Command, CommandSequence};
 use crate::ui::utils::extract_widget;
 use gtk4::prelude::*;
@@ -178,44 +179,19 @@ fn setup_grub_theme(builder: &Builder, window: &ApplicationWindow) {
         info!("GRUB Theme button clicked");
 
         let home = std::env::var("HOME").unwrap_or_default();
-
-        let commands = CommandSequence::new()
-            .then(
-                Command::builder()
-                    .normal()
-                    .program("git")
-                    .args(&[
-                        "clone",
-                        "--depth",
-                        "1",
-                        "https://github.com/xerolinux/xero-grubs",
-                        &format!("{}/xero-grubs", home),
-                    ])
-                    .description("Downloading GRUB theme repository...")
-                    .build(),
-            )
-            .then(
-                Command::builder()
-                    .privileged()
-                    .program("sh")
-                    .args(&["-c", &format!("cd {}/xero-grubs && ./install.sh", home)])
-                    .description("Installing GRUB theme...")
-                    .build(),
-            )
-            .then(
-                Command::builder()
-                    .normal()
-                    .program("rm")
-                    .args(&["-rf", &format!("{}/xero-grubs", home)])
-                    .description("Cleaning up temporary files...")
-                    .build(),
-            )
-            .build();
-
-        task_runner::run(
+        let repo_path = format!("{}/xero-grubs", home);
+        
+        // Run everything in terminal - clone if needed, then run interactive install script
+        let install_command = format!(
+            "if [ ! -d \"{}\" ]; then git clone --depth 1 https://github.com/xerolinux/xero-grubs \"{}\"; fi && cd \"{}\" && pkexec ./install.sh",
+            repo_path, repo_path, repo_path
+        );
+        
+        terminal::show_terminal_dialog(
             window.upcast_ref(),
-            commands,
             "XeroLinux GRUB Theme Installation",
+            "sh",
+            &["-c", &install_command],
         );
     });
 }
