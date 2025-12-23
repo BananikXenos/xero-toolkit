@@ -88,7 +88,7 @@
                     </object>
                 </child>
 
-                <!-- Row 2: OpenRazer -->
+                <!-- Row 2: OpenRazer, Fingerprint GUI -->
                 <child>
                     <object class="GtkBox">
                         <property name="orientation">horizontal</property>
@@ -98,6 +98,32 @@
                         <child>
                             <object class="GtkButton" id="btn_openrazer">
                                 <property name="label">OpenRazer Drivers</property>
+                                <property name="width-request">200</property>
+                                <property name="height-request">50</property>
+                                <property name="css-classes">suggested-action pill</property>
+                            </object>
+                        </child>
+
+                        <child>
+                            <object class="GtkButton" id="btn_fingerprint">
+                                <property name="child">
+                                    <object class="GtkBox">
+                                        <property name="orientation">horizontal</property>
+                                        <property name="spacing">8</property>
+                                        <property name="halign">center</property>
+                                        <child>
+                                            <object class="GtkImage">
+                                                <property name="icon-name">xfprintd-gui</property>
+                                                <property name="pixel-size">32</property>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="GtkLabel">
+                                                <property name="label">Fingerprint GUI</property>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </property>
                                 <property name="width-request">200</property>
                                 <property name="height-request">50</property>
                                 <property name="css-classes">suggested-action pill</property>
