@@ -74,33 +74,32 @@ pub fn add_overlay_to_window(window: &ApplicationWindow, drawing_area: &DrawingA
         }
     };
 
-    let toolbar_view = match content_widget.downcast_ref::<adw::ToolbarView>() {
-        Some(tv) => tv,
-        None => {
-            info!("Window content is not a ToolbarView");
-            return false;
-        }
-    };
+    // Verify it's a ToolbarView
+    if content_widget.downcast_ref::<adw::ToolbarView>().is_none() {
+        info!("Window content is not a ToolbarView, overlay may not work correctly");
+    }
 
-    let content = match toolbar_view.content() {
-        Some(c) => c,
-        None => {
-            info!("No content found in toolbar view");
-            return false;
-        }
-    };
-
-    if let Some(existing_overlay) = content.downcast_ref::<gtk4::Overlay>() {
-        info!("Found existing overlay, adding drawing area");
+    // Check if the content is already wrapped in an overlay
+    if let Some(existing_overlay) = content_widget.downcast_ref::<gtk4::Overlay>() {
+        info!("Found existing overlay at window level, adding drawing area");
         existing_overlay.add_overlay(drawing_area);
         true
     } else {
-        info!("Wrapping content in overlay");
+        info!("Wrapping window content in overlay to cover entire window including navbar");
+        // Create overlay that will wrap the entire content
         let overlay = gtk4::Overlay::new();
-        toolbar_view.set_content(Option::<&Widget>::None);
-        overlay.set_child(Some(&content));
+        
+        // Remove the content from the window
+        adw_window.set_content(Option::<&Widget>::None);
+        
+        // Add content as the main child of the overlay
+        overlay.set_child(Some(&content_widget));
+        
+        // Add the drawing area as an overlay
         overlay.add_overlay(drawing_area);
-        toolbar_view.set_content(Some(&overlay));
+        
+        // Set the overlay as the window content
+        adw_window.set_content(Some(&overlay));
         true
     }
 }
