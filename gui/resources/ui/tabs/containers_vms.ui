@@ -99,7 +99,7 @@
 
                         <child>
                             <object class="GtkButton" id="btn_vbox">
-                                <property name="label">vBox</property>
+                                <property name="label">Virtual Box</property>
                                 <property name="width-request">200</property>
                                 <property name="height-request">50</property>
                                 <property
@@ -128,7 +128,7 @@
                         <property name="halign">center</property>
                         <child>
                             <object class="GtkButton" id="btn_kvm">
-                                <property name="label">KVM</property>
+                                <property name="label">Qemu Virtual Manager</property>
                                 <property name="width-request">200</property>
                                 <property name="height-request">50</property>
                                 <property
