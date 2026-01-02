@@ -31,6 +31,9 @@ pub mod paths {
     /// Path to the xero-auth client binary.
     pub const CLIENT: &str = "/opt/xero-toolkit/xero-auth";
 
+    /// Path to the scripts directory.
+    pub const SCRIPTS: &str = "/opt/xero-toolkit/scripts";
+
     /// Get the daemon path as a PathBuf.
     pub fn daemon() -> PathBuf {
         PathBuf::from(DAEMON)
@@ -39,6 +42,11 @@ pub mod paths {
     /// Get the client path as a PathBuf.
     pub fn client() -> PathBuf {
         PathBuf::from(CLIENT)
+    }
+
+    /// Get the scripts path as a PathBuf.
+    pub fn scripts() -> PathBuf {
+        PathBuf::from(SCRIPTS)
     }
 }
 

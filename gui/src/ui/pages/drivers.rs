@@ -238,6 +238,14 @@ fn setup_nvidia_legacy(builder: &Builder, window: &ApplicationWindow) {
             "If you have <span foreground=\"red\" weight=\"bold\">RTX 20XX+</span>, download the Nvidia ISO from XeroLinux.\n\n\
             This option is <span foreground=\"red\" weight=\"bold\">ONLY</span> for legacy GPUs (GTX 10XX and below).",
             move || {
+                // Use configured path
+                let script_dir = crate::config::paths::scripts();
+                let grub_script = script_dir.join("nvidia_grub.sh").to_string_lossy().into_owned();
+                let mkinitcpio_script = script_dir
+                    .join("nvidia_mkinitcpio.sh")
+                    .to_string_lossy()
+                    .into_owned();
+
                 let commands = CommandSequence::new()
                     .then(
                         Command::builder()
@@ -253,6 +261,43 @@ fn setup_nvidia_legacy(builder: &Builder, window: &ApplicationWindow) {
                                 "opencl-nvidia-580xx",
                             ])
                             .description("Installing Nvidia Legacy Drivers...")
+                            .build(),
+                    )
+                    .then(
+                        Command::builder()
+                            .privileged()
+                            .program("bash")
+                            .args(&[&grub_script])
+                            .description("Configuring GRUB (nvidia-drm.modeset=1)...")
+                            .build(),
+                    )
+                    .then(
+                        Command::builder()
+                            .privileged()
+                            .program("bash")
+                            .args(&[&mkinitcpio_script])
+                            .description("Configuring mkinitcpio modules...")
+                            .build(),
+                    )
+                    .then(
+                        Command::builder()
+                            .privileged()
+                            .program("systemctl")
+                            .args(&[
+                                "enable",
+                                "nvidia-suspend.service",
+                                "nvidia-hibernate.service",
+                                "nvidia-resume.service",
+                            ])
+                            .description("Enabling Nvidia power management services...")
+                            .build(),
+                    )
+                    .then(
+                        Command::builder()
+                            .privileged()
+                            .program("mkinitcpio")
+                            .args(&["-P"])
+                            .description("Rebuilding initramfs...")
                             .build(),
                     )
                     .build();

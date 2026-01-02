@@ -43,6 +43,10 @@ package() {
   install -Dm755 "target/release/xero-auth" \
     "${pkgdir}/opt/xero-toolkit/xero-auth"
 
+  # Install scripts
+  install -d "${pkgdir}/opt/xero-toolkit/scripts"
+  install -m755 scripts/*.sh "${pkgdir}/opt/xero-toolkit/scripts/"
+
   # Convenience symlink in /usr/bin
   install -d "${pkgdir}/usr/bin"
   ln -s "/opt/xero-toolkit/xero-toolkit" "${pkgdir}/usr/bin/xero-toolkit"
