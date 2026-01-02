@@ -10,6 +10,7 @@ use crate::core;
 use crate::ui::dialogs::selection::{
     show_selection_dialog, SelectionDialogConfig, SelectionOption, SelectionType,
 };
+use crate::ui::dialogs::warning::show_warning_confirmation;
 use crate::ui::task_runner::{self, Command, CommandSequence};
 use crate::ui::utils::extract_widget;
 use gtk4::prelude::*;
@@ -23,6 +24,7 @@ pub fn setup_handlers(page_builder: &Builder, _main_builder: &Builder, window: &
     setup_openrazer(page_builder, window);
     setup_fingerprint(page_builder, window);
     setup_zenergy(page_builder, window);
+    setup_nvidia_legacy(page_builder, window);
 }
 
 fn setup_tailscale(builder: &Builder, window: &ApplicationWindow) {
@@ -218,6 +220,49 @@ fn setup_zenergy(builder: &Builder, window: &ApplicationWindow) {
             window.upcast_ref(),
             commands,
             "Install Zenergy Driver",
+        );
+    });
+}
+
+fn setup_nvidia_legacy(builder: &Builder, window: &ApplicationWindow) {
+    let button = extract_widget::<Button>(builder, "btn_nvidia_legacy");
+    let window = window.clone();
+
+    button.connect_clicked(move |_| {
+        info!("Nvidia Legacy Drivers button clicked");
+
+        let window_clone = window.clone();
+        show_warning_confirmation(
+            window.upcast_ref(),
+            "Nvidia Legacy Drivers",
+            "If you have <span foreground=\"red\" weight=\"bold\">RTX 20XX+</span>, download the Nvidia ISO from XeroLinux.\n\n\
+            This option is <span foreground=\"red\" weight=\"bold\">ONLY</span> for legacy GPUs (GTX 10XX and below).",
+            move || {
+                let commands = CommandSequence::new()
+                    .then(
+                        Command::builder()
+                            .aur()
+                            .args(&[
+                                "-S",
+                                "--noconfirm",
+                                "--needed",
+                                "lib32-nvidia-580xx-utils",
+                                "lib32-opencl-nvidia-580xx",
+                                "nvidia-580xx-dkms",
+                                "nvidia-580xx-utils",
+                                "opencl-nvidia-580xx",
+                            ])
+                            .description("Installing Nvidia Legacy Drivers...")
+                            .build(),
+                    )
+                    .build();
+
+                task_runner::run(
+                    window_clone.upcast_ref(),
+                    commands,
+                    "Install Nvidia Legacy Drivers",
+                );
+            },
         );
     });
 }

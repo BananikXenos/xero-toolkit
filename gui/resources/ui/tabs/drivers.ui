@@ -132,7 +132,7 @@
                     </object>
                 </child>
 
-                <!-- Row 3: Zenergy -->
+                <!-- Row 3: Zenergy, Nvidia Legacy -->
                 <child>
                     <object class="GtkBox">
                         <property name="orientation">horizontal</property>
@@ -142,6 +142,15 @@
                         <child>
                             <object class="GtkButton" id="btn_zenergy">
                                 <property name="label">Zenergy Driver</property>
+                                <property name="width-request">200</property>
+                                <property name="height-request">50</property>
+                                <property name="css-classes">suggested-action pill</property>
+                            </object>
+                        </child>
+
+                        <child>
+                            <object class="GtkButton" id="btn_nvidia_legacy">
+                                <property name="label">Nvidia Legacy Drivers</property>
                                 <property name="width-request">200</property>
                                 <property name="height-request">50</property>
                                 <property name="css-classes">suggested-action pill</property>

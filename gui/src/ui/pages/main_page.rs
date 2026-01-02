@@ -210,6 +210,11 @@ fn setup_install_nix(builder: &Builder, window: &ApplicationWindow) {
         show_warning_confirmation(
             window.upcast_ref(),
             "Experimental Feature Warning",
+            "Nix Package Manager is an <span foreground=\"red\" weight=\"bold\">EXPERIMENTAL</span> feature.\n\n\
+            This is intended for <span foreground=\"red\" weight=\"bold\">EXPERIENCED USERS ONLY</span>.\n\
+            <span foreground=\"red\" weight=\"bold\">Do NOT enable</span> unless you know what you are doing.\n\
+            <span foreground=\"red\" weight=\"bold\">NO SUPPORT</span> will be provided for Nix-related issues.\n\n\
+            Proceed at your own risk.",
             move || {
                 info!("User confirmed Nix installation after warning");
 

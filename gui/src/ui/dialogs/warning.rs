@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 /// Show a warning confirmation dialog with cancel and continue buttons.
 /// Calls on_confirm callback if user clicks continue.
-pub fn show_warning_confirmation<F>(parent: &Window, heading: &str, on_confirm: F)
+pub fn show_warning_confirmation<F>(parent: &Window, heading: &str, message: &str, on_confirm: F)
 where
     F: FnOnce() + 'static,
 {
@@ -33,12 +33,8 @@ where
     // Set heading (remove emoji from heading since we have an icon now)
     heading_label.set_label(heading);
 
-    // Set message with Pango markup for red text, centered
-    warning_message.set_markup("Nix Package Manager is an <span foreground=\"red\" weight=\"bold\">EXPERIMENTAL</span> feature.\n\n\
-        This is intended for <span foreground=\"red\" weight=\"bold\">EXPERIENCED USERS ONLY</span>.\n\
-        <span foreground=\"red\" weight=\"bold\">Do NOT enable</span> unless you know what you are doing.\n\
-        <span foreground=\"red\" weight=\"bold\">NO SUPPORT</span> will be provided for Nix-related issues.\n\n\
-        Proceed at your own risk.");
+    // Set message with Pango markup
+    warning_message.set_markup(message);
 
     // Setup callbacks
     let dialog_clone = dialog.clone();
