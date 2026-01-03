@@ -3,8 +3,11 @@
 //! Handles enabling/disabling autostart by managing the desktop file
 //! in the user's autostart directory.
 
+use crate::config;
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
+use std::os::unix::fs::symlink;
 
 /// Get the autostart desktop file path
 pub fn get_autostart_path() -> PathBuf {
@@ -14,10 +17,10 @@ pub fn get_autostart_path() -> PathBuf {
 
 /// Check if autostart is enabled
 pub fn is_enabled() -> bool {
-    get_autostart_path().exists()
+    get_autostart_path().exists() || config::paths::system_autostart().exists()
 }
 
-/// Enable autostart by copying the desktop file to autostart directory
+/// Enable autostart by creating a symlink to the desktop file in autostart directory
 pub fn enable() -> Result<(), std::io::Error> {
     let autostart_dir = dirs::config_dir()
         .unwrap_or_else(|| PathBuf::from("~/.config"))
@@ -26,29 +29,45 @@ pub fn enable() -> Result<(), std::io::Error> {
     // Create autostart directory if it doesn't exist
     fs::create_dir_all(&autostart_dir)?;
 
-    // Try to find the desktop file from common installation paths
-    let desktop_sources = [
-        PathBuf::from("/usr/share/applications/xero-toolkit.desktop"),
-        PathBuf::from("/usr/local/share/applications/xero-toolkit.desktop"),
-    ];
+    let target = get_autostart_path();
 
-    for source in &desktop_sources {
-        if source.exists() {
-            return fs::copy(source, get_autostart_path()).map(|_| ());
-        }
+    // Remove existing file/symlink if present
+    if target.symlink_metadata().is_ok() {
+        fs::remove_file(&target)?;
     }
 
-    Err(std::io::Error::new(
-        std::io::ErrorKind::NotFound,
-        "Desktop file not found in system applications",
-    ))
+    let source = config::paths::desktop_file();
+    if source.exists() {
+        symlink(source, target)
+    } else {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Desktop file not found in system applications",
+        ))
+    }
 }
 
 /// Disable autostart by removing the desktop file
 pub fn disable() -> Result<(), std::io::Error> {
     let path = get_autostart_path();
-    if path.exists() {
+    if path.symlink_metadata().is_ok() {
         fs::remove_file(path)?;
+    }
+
+    let system_path = config::paths::system_autostart();
+    if system_path.exists() {
+        // Use pkexec to remove the file with root privileges
+        let status = Command::new("pkexec")
+            .arg("rm")
+            .arg(system_path)
+            .status()?;
+
+        if !status.success() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "Failed to remove system-wide autostart file",
+            ));
+        }
     }
     Ok(())
 }

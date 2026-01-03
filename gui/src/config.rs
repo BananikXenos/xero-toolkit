@@ -34,6 +34,12 @@ pub mod paths {
     /// Path to the scripts directory.
     pub const SCRIPTS: &str = "/opt/xero-toolkit/scripts";
 
+    /// Path to the desktop file in system applications.
+    pub const DESKTOP_FILE: &str = "/usr/share/applications/xero-toolkit.desktop";
+
+    /// Path to the system-wide autostart desktop file.
+    pub const SYSTEM_AUTOSTART: &str = "/etc/xdg/autostart/xero-toolkit.desktop";
+
     /// Get the daemon path as a PathBuf.
     pub fn daemon() -> PathBuf {
         PathBuf::from(DAEMON)
@@ -47,6 +53,16 @@ pub mod paths {
     /// Get the scripts path as a PathBuf.
     pub fn scripts() -> PathBuf {
         PathBuf::from(SCRIPTS)
+    }
+
+    /// Get the desktop file path as a PathBuf.
+    pub fn desktop_file() -> PathBuf {
+        PathBuf::from(DESKTOP_FILE)
+    }
+
+    /// Get the system autostart path as a PathBuf.
+    pub fn system_autostart() -> PathBuf {
+        PathBuf::from(SYSTEM_AUTOSTART)
     }
 }
 

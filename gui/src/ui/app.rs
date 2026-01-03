@@ -154,6 +154,8 @@ fn setup_autostart_toggle(builder: &Builder) {
                 if state { "enable" } else { "disable" },
                 e
             );
+            // Return Propagation::Stop to prevent the switch from updating its state
+            return glib::Propagation::Stop;
         }
 
         // Return Propagation::Proceed to allow the switch to update its state
