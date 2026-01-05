@@ -429,4 +429,3 @@ pub fn finalize_execution(widgets: &TaskRunnerWidgets, success: bool, message: &
     super::ACTION_RUNNING.store(false, Ordering::SeqCst);
     widgets.show_completion(success, message);
 }
-

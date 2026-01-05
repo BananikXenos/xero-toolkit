@@ -63,8 +63,8 @@ where
     F: Fn(DownloadState) + Send + 'static,
 {
     use futures_util::StreamExt;
-    use tokio::io::AsyncWriteExt;
     use reqwest::header::RANGE;
+    use tokio::io::AsyncWriteExt;
 
     info!("Starting download from {} to {}", url, dest_path);
 
@@ -137,8 +137,11 @@ where
                 let status = response.status();
                 if !status.is_success() {
                     info!("Request failed with status: {}", status);
-                    if status == reqwest::StatusCode::RANGE_NOT_SATISFIABLE && total_size > 0 && downloaded >= total_size {
-                         break;
+                    if status == reqwest::StatusCode::RANGE_NOT_SATISFIABLE
+                        && total_size > 0
+                        && downloaded >= total_size
+                    {
+                        break;
                     }
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     continue;

@@ -5,9 +5,9 @@
 
 use crate::config;
 use std::fs;
+use std::os::unix::fs::symlink;
 use std::path::PathBuf;
 use std::process::Command;
-use std::os::unix::fs::symlink;
 
 /// Get the autostart desktop file path
 pub fn get_autostart_path() -> PathBuf {
@@ -57,10 +57,7 @@ pub fn disable() -> Result<(), std::io::Error> {
     let system_path = config::paths::system_autostart();
     if system_path.exists() {
         // Use pkexec to remove the file with root privileges
-        let status = Command::new("pkexec")
-            .arg("rm")
-            .arg(system_path)
-            .status()?;
+        let status = Command::new("pkexec").arg("rm").arg(system_path).status()?;
 
         if !status.success() {
             return Err(std::io::Error::new(

@@ -1,7 +1,6 @@
 //! Protocol definitions for communication between client and daemon.
 
 use rkyv::{Archive, Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Message sent from client to daemon.
 #[derive(Debug, Archive, Serialize, Deserialize)]
